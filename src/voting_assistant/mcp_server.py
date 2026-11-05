@@ -56,7 +56,7 @@ def create_app(index: PolicyIndex, public_url: str | None = None, bearer_token: 
     def search_guidelines(
         query: Annotated[str, Field(min_length=1, max_length=MAX_QUERY_LENGTH)],
         as_of_date: date,
-        limit: Annotated[int, Field(ge=1, le=MAX_RESULTS)] = 5,
+        limit: Annotated[int, Field(strict=True, ge=1, le=MAX_RESULTS)] = 5,
     ) -> dict[str, object]:
         """Find policy sections applicable on the given meeting date. Score is relevance."""
         return index.search(query, as_of_date, limit)

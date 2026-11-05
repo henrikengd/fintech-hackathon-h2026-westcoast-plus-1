@@ -161,6 +161,16 @@ class AssessmentTests(unittest.TestCase):
         self.assertEqual(run.assessments[0].status, "manual_review")
         self.assertIsNone(run.assessments[0].recommendation)
 
+    def test_empty_search_requires_manual_review(self):
+        class EmptyIndex(FakeIndex):
+            def search(self, query, as_of_date, limit=5):
+                return {"status": "no_matching_rules", "results": []}
+
+        run, _, _ = self.run_with(agenda("1", "2"), [search()], index=EmptyIndex())
+        self.assertEqual(run.status, "partial")
+        self.assertEqual([item.status for item in run.assessments], ["manual_review"] * 2)
+        self.assertIn("no_matching_rules", run.assessments[0].uncertainty_reason)
+
     def test_wrong_date_never_reaches_index_and_future_rule_is_rejected(self):
         run, _, index = self.run_with(agenda("1"), [search("2026-07-01")])
         self.assertEqual(run.status, "partial")

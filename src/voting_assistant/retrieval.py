@@ -286,6 +286,12 @@ class PolicyIndex:
 def build_index(args) -> int:
     try:
         manifest = PolicyManifest.model_validate_json(args.manifest.read_bytes())
+        inputs = {args.manifest.resolve()} | {
+            (args.manifest.parent / document.path).resolve()
+            for document in manifest.documents
+        }
+        if args.output.resolve() in inputs:
+            raise CliError("Regelindeksen må skrives til en egen fil")
         entries = _make_entries(manifest, args.manifest.parent)
         data = IndexData(
             index_version=_index_version(entries, manifest.corpus_kind),

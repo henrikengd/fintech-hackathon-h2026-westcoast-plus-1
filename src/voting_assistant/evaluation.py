@@ -14,7 +14,7 @@ from pathlib import Path
 import tempfile
 from typing import Literal, Protocol, TypeVar
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from .cli import CliError
 from .contracts import Agenda, Assessment, Contract, MeetingReference, NonEmpty, Sha256, Vote
@@ -40,6 +40,7 @@ class Manifest(Contract):
     dataset_kind: DatasetKind
     split: Split = "test"
     meetings: list[MeetingEntry]
+    policy_documents: dict[NonEmpty, Sha256] = Field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -277,6 +278,22 @@ def _load_run(output: Path, config: dict, resume: bool) -> dict:
     return previous
 
 
+def _unassessed(agenda: Agenda, reason: str) -> dict:
+    return {
+        "status": "partial",
+        "assessments": [
+            Assessment(
+                proposal_id=proposal.proposal_id, status="manual_review",
+                recommendation=None, rationale=reason, policy_sources=[],
+                factual_sources=[], missing_information=[reason],
+                uncertainty_reason=reason,
+            ).model_dump(mode="json")
+            for proposal in agenda.proposals
+        ],
+        "errors": [reason],
+    }
+
+
 def run_evaluation(
     manifest: Manifest,
     meetings: list[Meeting],
@@ -321,7 +338,10 @@ def run_evaluation(
                 spent_before = _money(report["spent_usd"])
                 remaining = budget - spent_before
                 if remaining <= 0:
-                    break
+                    if not runs.get(meeting_id, {}).get("assessments"):
+                        runs[meeting_id] = _unassessed(agenda, "Kostnadsrammen er brukt opp.")
+                        checkpoint()
+                    continue
 
                 def account(cost: Decimal) -> None:
                     report["spent_usd"] = str(spent_before + _money(cost))
@@ -336,11 +356,7 @@ def run_evaluation(
                 except OSError:
                     raise
                 except Exception as error:
-                    run = {
-                        "status": "partial",
-                        "assessments": [],
-                        "errors": [f"assessment failed ({type(error).__name__})"],
-                    }
+                    run = _unassessed(agenda, f"Vurderingen feilet ({type(error).__name__}).")
                 if run.get("status") == "complete" and not _complete(run, agenda):
                     run["status"] = "partial"
                     run.setdefault("errors", []).append("assessment did not cover the ordered agenda")
@@ -383,6 +399,20 @@ def evaluate(args: argparse.Namespace) -> int:
     expected_corpus = "synthetic" if manifest.dataset_kind == "synthetic" else "nbim"
     if index.corpus_kind != expected_corpus:
         raise CliError("evaluation dataset and policy corpus kinds differ")
+
+    if manifest.policy_documents:
+        expected = set(manifest.policy_documents.items())
+        available = set()
+        for meeting in meetings:
+            applicable = {
+                (rule.policy_version, rule.source.sha256)
+                for rule in index.valid_guidelines(meeting.agenda.meeting_date)
+            }
+            if not applicable or not applicable <= expected:
+                raise CliError("policy documents differ from the frozen meeting manifest")
+            available.update(applicable)
+        if available != expected:
+            raise CliError("frozen policy documents are missing from the index")
 
     with Anthropic(api_key=key, max_retries=0) as client:
         def assess_meeting(agenda: Agenda, remaining: Decimal, account: Callable[[Decimal], None]):

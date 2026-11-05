@@ -84,6 +84,14 @@ class PolicyIndexTests(unittest.TestCase):
         self.assertEqual(index.get("auditor", "unavailable")["status"], "unknown_version")
         self.assertEqual(index.get("unknown", "synthetic-1")["status"], "unknown_guideline")
 
+    def test_refuses_to_overwrite_manifest_or_source(self):
+        for path in (self.manifest, self.source):
+            with self.subTest(path=path.name):
+                original = path.read_bytes()
+                with self.assertRaisesRegex(CliError, "egen fil"):
+                    build_index(Namespace(manifest=self.manifest, output=path))
+                self.assertEqual(original, path.read_bytes())
+
     def test_refuses_wrong_source_hash_and_leaves_previous_index(self):
         self.build()
         previous = self.index.read_bytes()

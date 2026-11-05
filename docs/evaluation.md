@@ -17,7 +17,7 @@ Evalueringsmanifestet peker på to filer per møte. Sakslisten gir Claude forsla
 }
 ```
 
-Filstier er relative til manifestet. Beregn SHA-256 fra filenes faktiske bytes. Lagre ett møte i bare én del av utvalget. Alle testmøter må være senere enn alle utviklingsmøter dersom manifestet inneholder begge deler. Kildene i sakslisten må være datert senest på møtedagen. Standard er å kjøre `test`. Sett `split` til `development` for utprøving.
+Filstier er relative til manifestet. Beregn SHA-256 fra filenes faktiske bytes. Lagre ett møte i bare én del av utvalget. Alle testmøter må være senere enn alle utviklingsmøter dersom manifestet inneholder begge deler. Kildene i sakslisten må være datert senest på møtedagen. Ved behov kan `policy_documents` låse versjoner til SHA-256 for kildedokumentene. Pilotmanifestet gjør dette for NBIMs 2025-PDF. Standard er å kjøre `test`. Sett `split` til `development` for utprøving.
 
 Bruk `nbim_verified` når stemmene er avstemt mot en kilde som dokumenterer stemmeintensjon eller avgitt stemme. Feltet beskriver referansedataene. Gyldigheten av historiske retningslinjer vurderes separat. Bruk `nbim_candidate` for eksporten med uavklarte stemmedefinisjoner og `synthetic` for konstruerte eksempler. Et syntetisk datasett krever en syntetisk regelindeks. De to NBIM-variantene bruker NBIM-indeksen.
 

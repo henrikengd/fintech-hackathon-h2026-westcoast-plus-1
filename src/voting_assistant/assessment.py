@@ -12,6 +12,7 @@ from anthropic import Anthropic, APIError
 from pydantic import Field, ValidationError
 
 from .contracts import Agenda, Assessment, Contract, Guideline, NonEmpty, Proposal, Source, Vote
+from .retrieval import MAX_QUERY_LENGTH, MAX_RESULTS
 
 ASSESSMENT_PROMPT = """You are reviewing a shareholder meeting agenda against the supplied voting guidelines.
 Keep one result per actual voting proposal, in agenda order. Search in English using the meeting date.
@@ -89,9 +90,9 @@ class _ProposalResult(Contract):
 
 
 class _SearchArgs(Contract):
-    query: Annotated[str, Field(min_length=1, max_length=1000)]
+    query: Annotated[str, Field(min_length=1, max_length=MAX_QUERY_LENGTH)]
     as_of_date: str
-    limit: Annotated[int, Field(strict=True, ge=1, le=10)] = 5
+    limit: Annotated[int, Field(strict=True, ge=1, le=MAX_RESULTS)] = 5
 
 
 class _GetArgs(Contract):
@@ -290,7 +291,13 @@ def _tool_result(
                 if not isinstance(raw_rules, list) or not 1 <= len(raw_rules) <= args.limit:
                     raise ValueError("Invalid search result count")
                 rules = [_validated_rule(raw, meeting_date) for raw in raw_rules]
-            content = {"status": status, "results": [rule.model_dump(mode="json") for rule in rules]}
+            content = {
+                "status": status,
+                "results": [
+                    rule.model_dump(mode="json") | {"score": raw.get("score")}
+                    for rule, raw in zip(rules, reply.get("results", []), strict=True)
+                ],
+            }
         elif name == "get_guideline":
             args = _GetArgs.model_validate(raw_args)
             log.guideline_id, log.policy_version = args.guideline_id, args.policy_version
@@ -426,7 +433,7 @@ def assess(
         for tool in tools:
             content, log, rules = _tool_result(tool.name, tool.input, agenda.meeting_date, index)
             tool_calls.append(log)
-            if log.status in {"error", "no_valid_version", "unknown_guideline", "unknown_version"}:
+            if log.status != "ok":
                 errors.append(f"Regeloppslag feilet ({log.name}, {log.status}).")
             for rule in rules:
                 identity = rule.guideline_id, rule.policy_version

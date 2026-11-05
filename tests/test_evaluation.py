@@ -187,6 +187,26 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(report["spent_usd"], "0.14")
         self.assertEqual(report["metrics"]["status"], "complete")
 
+    def test_skipped_and_failed_meetings_keep_all_proposal_ids(self):
+        def fail(agenda, remaining, reserve):
+            raise RuntimeError("details must not reach the report")
+
+        for budget in (Decimal("0"), Decimal("1")):
+            with self.subTest(budget=budget):
+                report = run_evaluation(
+                    self.manifest, [self.meeting], "a" * 64,
+                    self.output.with_suffix(f".{budget}.json"),
+                    assessor=fail, max_cost_usd=budget, config={},
+                )
+                result = report["runs"]["first"]
+                self.assertEqual(report["metrics"]["status"], "partial")
+                self.assertEqual(
+                    [item["proposal_id"] for item in result["assessments"]],
+                    [proposal.proposal_id for proposal in self.meeting.agenda.proposals],
+                )
+                self.assertTrue(all(item["status"] == "manual_review" for item in result["assessments"]))
+                self.assertNotIn("details must not reach", json.dumps(result))
+
     def test_invalid_completed_run_cannot_mark_report_complete(self):
         def wrong_order(agenda, remaining, reserve):
             run = self.complete_run(agenda)

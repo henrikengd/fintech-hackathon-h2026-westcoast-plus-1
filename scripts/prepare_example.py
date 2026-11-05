@@ -27,13 +27,14 @@ def write_json(directory: Path, name: str, value: object) -> dict[str, str]:
 
 
 def prepare(proxy: Path, directory: Path, split: str) -> None:
-    if sha256(proxy.read_bytes()).hexdigest() != PROXY_SHA256:
+    raw = proxy.read_bytes()
+    if sha256(raw).hexdigest() != PROXY_SHA256:
         raise ValueError("Sprinklr proxy PDF checksum differs from the verified edition")
     # Keep the verified one-based PDF page numbers when extracting evidence.
     pages = subprocess.run(
-        ["pdftotext", "-layout", str(proxy), "-"],
-        check=True, capture_output=True, text=True, encoding="utf-8",
-    ).stdout.split("\f")
+        ["pdftotext", "-layout", "-", "-"],
+        input=raw, check=True, capture_output=True,
+    ).stdout.decode("utf-8").split("\f")
     source = {
         "document": "Sprinklr 2025 definitive proxy statement",
         "url": PROXY_URL, "document_date": "2025-05-02",
@@ -56,6 +57,13 @@ def prepare(proxy: Path, directory: Path, split: str) -> None:
         "meeting_id": "sprinklr-2025-06-12", "company_id": "sec-cik-1569345",
         "meeting_date": "2025-06-12", "document_source": source, "proposals": proposals,
     }
+    generated = {"manifest.json"} | {
+        f"{meeting}-{kind}.json"
+        for meeting in ("ccc-2025-05-22", "sprinklr-2025-06-12")
+        for kind in ("agenda", "reference")
+    }
+    if proxy.resolve() in {(directory / name).resolve() for name in generated}:
+        raise ValueError("Pilot output must be separate from the source PDF")
     directory.mkdir(parents=True, exist_ok=True)
     meetings = []
     for key, cohort, meeting in (
@@ -72,6 +80,9 @@ def prepare(proxy: Path, directory: Path, split: str) -> None:
         })
     write_json(directory, "manifest.json", {
         "version": 1, "dataset_kind": "nbim_verified", "split": split, "meetings": meetings,
+        "policy_documents": {
+            "2025-05-13": "cde5f906ff68e4c13a0408a9b516ca346c821f642db3603405c1736cf7d6378c",
+        },
     })
 
 

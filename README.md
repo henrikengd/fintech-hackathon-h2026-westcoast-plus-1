@@ -12,7 +12,7 @@ Gjennomføring og verifikasjon står i [leveransejournalen](docs/features/claude
 
 ## Kjør piloten
 
-Installer [uv](https://docs.astral.sh/uv/getting-started/installation/) og Poppler (`pdftotext`). Kjør fra repoets rot.
+Bruk macOS, Linux eller WSL. Installer [uv](https://docs.astral.sh/uv/getting-started/installation/) og Poppler (`pdftotext`). Kjør fra repoets rot.
 
 ```sh
 uv sync --locked
