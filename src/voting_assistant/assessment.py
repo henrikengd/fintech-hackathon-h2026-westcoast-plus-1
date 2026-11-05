@@ -390,8 +390,9 @@ def assess(
     assessments = raw_answer = None
     cost = Decimal(0)
     input_tokens = output_tokens = 0
-    # Thinking counts against max_tokens, and the answer quotes its sources for every proposal.
-    max_tokens = min(16000, len(agenda.proposals) * 2000)
+    # Reserve shared thinking overhead plus sourced reasoning for each proposal.
+    # The cost checks below reserve this entire cap before each paid request.
+    max_tokens = min(64000, 8000 + len(agenda.proposals) * 4000)
     request = {
         "model": model, "system": ASSESSMENT_PROMPT, "tools": _TOOLS, "messages": messages,
         "output_config": _ANSWER_FORMAT,
@@ -422,7 +423,8 @@ def assess(
         if on_cost:
             on_cost(cost + reserved)
         try:
-            reply = client.messages.create(**request, max_tokens=max_tokens)
+            # Explicit timeout allows the larger non-streaming cap without an unbounded wait.
+            reply = client.messages.create(**request, max_tokens=max_tokens, timeout=180.0)
         except APIError:
             cost += reserved
             errors.append("Modellforespørselen feilet. Anslått maksbeløp er reservert.")

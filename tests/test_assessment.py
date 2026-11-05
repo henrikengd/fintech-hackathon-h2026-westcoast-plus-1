@@ -100,7 +100,10 @@ class AssessmentTests(unittest.TestCase):
             requests.append((request.url.path, payload))
             if request.url.path.endswith("/count_tokens"):
                 return httpx2.Response(200, json={"input_tokens": 800})
+            self.assertEqual(request.extensions["timeout"]["read"], 180.0)
             result = next(pending)
+            if callable(result):
+                result = result(payload)
             if result is None:
                 raise httpx2.ReadTimeout("secret-test-string", request=request)
             return httpx2.Response(200, json=result)
@@ -286,7 +289,7 @@ class AssessmentTests(unittest.TestCase):
 
     def test_budget_rejects_paid_request_and_ambiguous_timeout_keeps_reservation(self):
         charges = []
-        run, requests, _ = self.run_with(agenda("1"), [], budget="0.031", on_cost=charges.append)
+        run, requests, _ = self.run_with(agenda("1"), [], budget="0.181", on_cost=charges.append)
         self.assertEqual(run.status, "partial")
         self.assertEqual(run.cost_usd, 0)
         self.assertEqual([path for path, _ in requests], ["/v1/messages/count_tokens"])
@@ -300,9 +303,41 @@ class AssessmentTests(unittest.TestCase):
     def test_truncated_reply_names_stop_reason_and_output_limit_scales(self):
         cut_off = response([{"type": "text", "text": "{"}], "max_tokens")
         run, requests, _ = self.run_with(agenda("1a", "1b", "1c", "2", "3"), [cut_off])
-        self.assertEqual(requests[-1][1]["max_tokens"], 10000)
+        self.assertEqual(requests[-1][1]["max_tokens"], 28000)
         self.assertEqual(run.status, "partial")
         self.assertIn("stop_reason: max_tokens", run.errors[0])
+
+    def test_five_proposal_response_has_room_for_thinking_and_complete_answer(self):
+        ids = ("1a", "1b", "1c", "2", "3")
+        required_output = 12001  # Simulated thinking plus answer exceeds the former 10,000 cap.
+
+        def answer_with_thinking(payload):
+            if payload["max_tokens"] < required_output:
+                result = response([{"type": "text", "text": "{"}], "max_tokens")
+                result["usage"]["output_tokens"] = payload["max_tokens"]
+                return result
+            result = answer(*(recommendation(proposal_id) for proposal_id in ids))
+            result["usage"]["output_tokens"] = required_output
+            return result
+
+        run, _, _ = self.run_with(agenda(*ids), [search(), answer_with_thinking])
+        self.assertEqual(run.status, "complete")
+        self.assertEqual([row.proposal_id for row in run.assessments], list(ids))
+        self.assertTrue(all(row.status == "assessed" for row in run.assessments))
+        self.assertGreater(run.output_tokens, 10000)
+
+    def test_five_proposal_cap_is_reserved_before_any_paid_request(self):
+        charges = []
+        run, requests, _ = self.run_with(
+            agenda("1a", "1b", "1c", "2", "3"), [], budget="0.30", on_cost=charges.append,
+        )
+        self.assertEqual(requests, [])
+        self.assertEqual(charges, [])
+        self.assertEqual(run.cost_usd, 0)
+        self.assertEqual(run.status, "partial")
+        self.assertEqual(len(run.assessments), 5)
+        self.assertTrue(all(row.status == "manual_review" for row in run.assessments))
+        self.assertIn("Kostnadsrammen", run.errors[0])
 
     def test_wrong_source_number_resolves_by_quote_within_the_proposal(self):
         misnumbered = recommendation()
