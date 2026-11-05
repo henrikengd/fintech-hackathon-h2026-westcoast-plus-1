@@ -1,6 +1,6 @@
 # Stemmegivningsassistent: status og videre arbeid
 
-Oppdatert 5. november 2026. Brukeren ba om å ta videre avklaring av datakildene senere og lagre funn og vurderinger i repoet. Denne oppdateringen samler dokumentasjonen. Implementering er ikke startet som del av denne samtalen.
+Oppdatert 5. november 2026. Dette notatet samler beslutningene fra planleggingen. Gjeldende implementeringsstatus og verifikasjon står i [leveransejournalen](delivery.md).
 
 ## Avtalt retning
 
@@ -29,7 +29,7 @@ Startpakken beskriver N-PX-nedlasting og anbefaler samme forvalter for stemmer o
 1. Hent arrangørens eksport-/renseskript, feltbeskrivelse og originale kildeidentifikatorer. Avklar særlig forvalter, aggregering, styrefelt, injection_flag og tekst før rensing.
 2. Koble en komplett innkalling til referansestemmene og gyldige regler. Frys deretter et lite utvalg med senere møter til sluttmåling.
 3. Kontroller NBIM-tilgang, faktisk Anthropic API-nøkkel, Claude-connector og tilgjengelige kreditter. Laget har oppgitt USD 204; brukbarhet og saldo er ikke verifisert.
-4. Fortsett etter oppgaveplanen. T-02 / #3 er første forberedte implementeringsoppgave. Datatilgang og avstemming ligger i T-01 / #2; evalueringskontrollene ligger i T-06 / #7.
+4. Fortsett fra oppgavestatusen i leveransejournalen. Datatilgang og avstemming ligger i T-01 / #2. Evalueringskontrollene ligger i T-06 / #7.
 
 [GitHub-prosjekt](https://github.com/users/henrikengd/projects/3) · [Hovedissue #1](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/1)
 

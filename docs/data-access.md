@@ -21,3 +21,15 @@ Bruk originalstemmen fra CSV som utgangspunkt. `Withhold` normaliseres til MOT, 
 ## Før sluttmåling
 
 Avstem referansestemmer mot NBIM-kilden og avklar historisk regelversjon. Dokumenter deretter separate utviklingsmøter og senere testmøter med kildelenker, datoer, kontrollsummer og regelversjoner. Det kontrollerte CCC-møtet er et utviklingseksempel. Det er ennå ikke frosset et sluttsett, og API-tilgang, API-respons, saldo og faktisk Claude-tilkobling venter på lagets tilgang.
+
+
+## Offentlig pilot med to møter
+
+Den offentlige NBIM-siden for CCC samsvarer med alle tre kontrollerte rader, inkludert styrets anbefalinger. Det gir en referanse med semantikken `voting_intention`. Sprinklrs møte 12. juni 2025 er et senere, separat pilotmøte. Innkallingen og 8-K viser tre nummererte forslag. Direkte avstemming mot NBIM viser fem stemmevalg fordi hvert av de tre styremedlemmene i forslag 1 har en egen stemme. Styret anbefalte FOR på alle fem. NBIMs referansefiler peker til de kontrollerte nettsidene og bruker kontrollsummen fra øyeblikksbildet som ble hentet 5. november 2026. Feltet `document_date` i referansen angir denne innhentingsdatoen.
+
+- CCC, utvikling. [NBIMs stemmeintensjoner](https://www.nbim.no/en/responsible-investment/voting/our-voting-records/meeting?m=1952285).
+- Sprinklr, test. [NBIMs stemmeintensjoner](https://www.nbim.no/en/responsible-investment/voting/our-voting-records/meeting?m=1968008), [innkalling](https://investors.sprinklr.com/financial-information/all-sec-filings/content/0001140361-25-017121/0001140361-25-017121.pdf), [8-K](https://www.sec.gov/Archives/edgar/data/1569345/000156934525000037/cxm-20250612.htm).
+
+`scripts/prepare_example.py` kontrollerer PDF-hashen og trekker ut forhåndsvalgte sider med `pdftotext`. Den skriver saksgrunnlag og referanser som separate filer med kontrollsummer i et lokalt manifest. Den senere 8-K-en brukes til manuell avstemming. Modellinput hentes fra innkallingen. CCC-JSON-en dekker rekkefølge og identitet med korte utdrag. Bruk hele CCC-innkallingen for selve chatdemoen.
+
+Dette er en liten, målrettet pilot. Testmøtet er valgt blant senere møter med en MOT-referanse og komplett innkalling. Resultater må rapporteres med tellere og dekning. Det finnes ingen bred, representativ sluttmåling. Validering av nøyaktig historisk virkningsperiode og live API-tilgang står fortsatt åpent.
