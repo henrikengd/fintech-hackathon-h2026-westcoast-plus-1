@@ -8,7 +8,7 @@ from hashlib import sha256
 import json
 from typing import Annotated, Literal, Protocol
 
-from anthropic import Anthropic, APIError
+from anthropic import Anthropic, APIError, transform_schema
 from pydantic import Field, ValidationError
 
 from .contracts import Agenda, Assessment, Contract, Guideline, NonEmpty, Proposal, Source, Vote
@@ -65,6 +65,7 @@ class AssessmentRun(Contract):
     errors: list[str]
     model: str
     prompt_version: str
+    raw_answer: str | None = None
 
 
 class _RuleCitation(Contract):
@@ -89,6 +90,10 @@ class _ProposalResult(Contract):
     uncertainty_reason: NonEmpty | None
 
 
+class _Answer(Contract):
+    assessments: list[_ProposalResult]
+
+
 class _SearchArgs(Contract):
     query: Annotated[str, Field(min_length=1, max_length=MAX_QUERY_LENGTH)]
     as_of_date: str
@@ -100,6 +105,7 @@ class _GetArgs(Contract):
     policy_version: Annotated[str, Field(min_length=1, max_length=200)]
 
 
+_ANSWER_FORMAT = {"format": {"type": "json_schema", "schema": transform_schema(_Answer)}}
 _TOOLS = [
     {
         "name": "search_guidelines",
@@ -176,6 +182,15 @@ def _quoted_source(source: Source, quote: str, excerpt: str) -> Source:
     return source.model_copy(update={"quote": quote})
 
 
+def _fact_source(citation: _FactCitation, facts: list[Source]) -> Source:
+    # The quote proves the source, and only this proposal's excerpts count.
+    # The number just picks between excerpts that repeat the same passage.
+    for source in facts[citation.source_number - 1:citation.source_number] + facts:
+        if _normalized(citation.quote) in _normalized(source.quote or ""):
+            return _quoted_source(source, citation.quote, source.quote or "")
+    raise ValueError(f"Sitatet med kildenummer {citation.source_number} finnes ikke i forslagets kildemateriale.")
+
+
 def _accepted_result(
     raw: object,
     facts: list[Source],
@@ -188,12 +203,7 @@ def _accepted_result(
         if rule is None:
             raise ValueError("Regelreferansen mangler et gyldig oppslag for møtedatoen.")
         policy_sources.append(_quoted_source(rule.source, citation.quote, rule.text))
-    factual_sources = []
-    for citation in proposed.factual_sources:
-        if citation.source_number > len(facts):
-            raise ValueError("Faktareferansen finnes ikke i forslagets kildemateriale.")
-        source = facts[citation.source_number - 1]
-        factual_sources.append(_quoted_source(source, citation.quote, source.quote or ""))
+    factual_sources = [_fact_source(citation, facts) for citation in proposed.factual_sources]
     if proposed.status == "assessed" and proposed.missing_information:
         raise ValueError("Anbefalingen mangler opplysninger modellen selv angir som nødvendige.")
     return Assessment(
@@ -351,11 +361,15 @@ def assess(
     tool_calls = []
     seen_rules: dict[tuple[str, str], Guideline] = {}
     errors: list[str] = []
-    assessments = None
+    assessments = raw_answer = None
     cost = Decimal(0)
     input_tokens = output_tokens = 0
-    max_tokens = min(8192, max(1024, len(agenda.proposals) * 500))
-    request = {"model": model, "system": ASSESSMENT_PROMPT, "tools": _TOOLS, "messages": messages}
+    # Thinking counts against max_tokens, and the answer quotes its sources for every proposal.
+    max_tokens = min(16000, len(agenda.proposals) * 2000)
+    request = {
+        "model": model, "system": ASSESSMENT_PROMPT, "tools": _TOOLS, "messages": messages,
+        "output_config": _ANSWER_FORMAT,
+    }
     if agenda.document_source.document_date > agenda.meeting_date:
         errors.append("Innkallingen er datert etter møtet.")
 
@@ -417,13 +431,15 @@ def assess(
             errors.append("Modellsvaret inneholder ingen lesbar meldingsstruktur.")
             break
         tools = [block for block in blocks if block.type == "tool_use"]
+        raw_answer = "".join(block.text for block in blocks if block.type == "text")
         if reply.stop_reason == "end_turn" and not tools:
-            text = "".join(block.text for block in blocks if block.type == "text")
-            assessments, parse_errors = _parse_answer(agenda, text, facts, seen_rules)
+            assessments, parse_errors = _parse_answer(agenda, raw_answer, facts, seen_rules)
             errors.extend(parse_errors)
             break
         if reply.stop_reason != "tool_use" or not tools:
-            errors.append("Modellen avsluttet før den leverte et fullstendig resultat.")
+            errors.append(
+                f"Modellen avsluttet før den leverte et fullstendig resultat (stop_reason: {reply.stop_reason})."
+            )
             break
         if len(tool_calls) + len(tools) > _MAX_TOOL_CALLS:
             errors.append("Grensen for regeloppslag er nådd.")
@@ -463,4 +479,5 @@ def assess(
         errors=errors,
         model=model,
         prompt_version=PROMPT_VERSION,
+        raw_answer=raw_answer,
     )

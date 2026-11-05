@@ -206,7 +206,7 @@ class AssessmentTests(unittest.TestCase):
 
     def test_budget_rejects_paid_request_and_ambiguous_timeout_keeps_reservation(self):
         charges = []
-        run, requests, _ = self.run_with(agenda("1"), [], budget="0.016", on_cost=charges.append)
+        run, requests, _ = self.run_with(agenda("1"), [], budget="0.031", on_cost=charges.append)
         self.assertEqual(run.status, "partial")
         self.assertEqual(run.cost_usd, 0)
         self.assertEqual([path for path, _ in requests], ["/v1/messages/count_tokens"])
@@ -216,6 +216,32 @@ class AssessmentTests(unittest.TestCase):
         self.assertEqual(run.cost_usd, charges[0])
         self.assertGreater(run.cost_usd, 0)
         self.assertNotIn("secret-test-string", run.model_dump_json())
+
+    def test_truncated_reply_names_stop_reason_and_output_limit_scales(self):
+        cut_off = response([{"type": "text", "text": "{"}], "max_tokens")
+        run, requests, _ = self.run_with(agenda("1a", "1b", "1c", "2", "3"), [cut_off])
+        self.assertEqual(requests[-1][1]["max_tokens"], 10000)
+        self.assertEqual(run.status, "partial")
+        self.assertIn("stop_reason: max_tokens", run.errors[0])
+
+    def test_wrong_source_number_resolves_by_quote_within_the_proposal(self):
+        misnumbered = recommendation()
+        misnumbered["factual_sources"][0]["source_number"] = 5
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(misnumbered)])
+        self.assertEqual(run.status, "complete")
+        self.assertEqual(run.assessments[0].factual_sources[0].page, PROPOSAL_SOURCE.page)
+        misnumbered["factual_sources"][0]["quote"] = "Not in any excerpt."
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(misnumbered)])
+        self.assertEqual(run.status, "partial")
+        self.assertIn("kildenummer 5", run.errors[0])
+
+    def test_answer_schema_is_sent_and_raw_answer_is_kept(self):
+        malformed = response([{"type": "text", "text": "not JSON"}], "end_turn")
+        run, requests, _ = self.run_with(agenda("1"), [malformed])
+        self.assertEqual(run.raw_answer, "not JSON")
+        for _, payload in requests:
+            self.assertEqual(payload["output_config"]["format"]["type"], "json_schema")
+        self.assertNotIn('"minLength"', json.dumps(requests[0][1]["output_config"]))
 
     def test_conflicting_versions_fail_closed(self):
         class ConflictingIndex(FakeIndex):
