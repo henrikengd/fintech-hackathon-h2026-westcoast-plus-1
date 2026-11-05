@@ -1,0 +1,63 @@
+{
+  "meeting_id": "ccc-2025-05-22",
+  "company_id": "sec-cik-1818201",
+  "meeting_date": "2025-05-22",
+  "document_source": {
+    "document": "CCC Intelligent Solutions 2025 annual meeting agenda",
+    "url": "https://materials.proxyvote.com/Approved/EPLST1/20250515/OTHER_608638.PDF",
+    "page": 1,
+    "document_date": "2025-05-15",
+    "version": "agenda-2025-05-15",
+    "sha256": "f2a174bc390abe3d1b643186cfd4e075006d7a3863aa0d1809ab8fbb53e9f220"
+  },
+  "proposals": [
+    {
+      "proposal_id": "1",
+      "original_text": "Election of Class I director",
+      "proposal_type": "director_election",
+      "sources": [
+        {
+          "document": "CCC Intelligent Solutions 2025 annual meeting agenda",
+          "url": "https://materials.proxyvote.com/Approved/EPLST1/20250515/OTHER_608638.PDF",
+          "page": 1,
+          "document_date": "2025-05-15",
+          "version": "agenda-2025-05-15",
+          "sha256": "f2a174bc390abe3d1b643186cfd4e075006d7a3863aa0d1809ab8fbb53e9f220",
+          "section": "Proposal 1"
+        }
+      ]
+    },
+    {
+      "proposal_id": "2",
+      "original_text": "compensation of the Company’s named executive officers",
+      "proposal_type": "say_on_pay",
+      "sources": [
+        {
+          "document": "CCC Intelligent Solutions 2025 annual meeting agenda",
+          "url": "https://materials.proxyvote.com/Approved/EPLST1/20250515/OTHER_608638.PDF",
+          "page": 1,
+          "document_date": "2025-05-15",
+          "version": "agenda-2025-05-15",
+          "sha256": "f2a174bc390abe3d1b643186cfd4e075006d7a3863aa0d1809ab8fbb53e9f220",
+          "section": "Proposal 2"
+        }
+      ]
+    },
+    {
+      "proposal_id": "3",
+      "original_text": "Ratification of the appointment of Deloitte & Touche LLP",
+      "proposal_type": "auditor_ratification",
+      "sources": [
+        {
+          "document": "CCC Intelligent Solutions 2025 annual meeting agenda",
+          "url": "https://materials.proxyvote.com/Approved/EPLST1/20250515/OTHER_608638.PDF",
+          "page": 1,
+          "document_date": "2025-05-15",
+          "version": "agenda-2025-05-15",
+          "sha256": "f2a174bc390abe3d1b643186cfd4e075006d7a3863aa0d1809ab8fbb53e9f220",
+          "section": "Proposal 3"
+        }
+      ]
+    }
+  ]
+}
