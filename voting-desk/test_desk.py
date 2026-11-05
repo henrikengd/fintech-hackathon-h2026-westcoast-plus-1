@@ -1,4 +1,5 @@
-"""Offline checks on the parts a reviewer has to trust. Run with: uv run python -m unittest"""
+"""Offline checks on the parts a reviewer has to trust. Run with: python test_desk.py"""
+import boot  # noqa: F401
 import unittest
 
 import pandas as pd

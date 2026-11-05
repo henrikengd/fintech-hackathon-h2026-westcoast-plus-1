@@ -14,13 +14,13 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 ENV = ROOT / ".venv"
 PYTHON = ENV / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-READY = ROOT / ".installed"
+READY = ENV / "installed"
 LOCK = ROOT / ".installing"
 
 
 def install():
     uv = shutil.which("uv")
-    steps = ([[uv, "venv", ENV], [uv, "pip", "install", "--no-cache", "--python", PYTHON, "-r", ROOT / "requirements.txt"]] if uv else
+    steps = ([[uv, "venv", "--clear", ENV], [uv, "pip", "install", "--no-cache", "--python", PYTHON, "-r", ROOT / "requirements.txt"]] if uv else
              [[PYTHON, "-m", "pip", "install", "-q", "--no-cache-dir", "--disable-pip-version-check", "-r", ROOT / "requirements.txt"]])
     if not uv:
         venv.create(ENV, with_pip=True, clear=True)
@@ -28,7 +28,7 @@ def install():
         for step in steps:
             subprocess.run(step, check=True, stdin=subprocess.DEVNULL, stdout=log, stderr=log)
     READY.write_text("ok")
-    LOCK.unlink(missing_ok=True)
+    (ROOT / ".install.log").unlink(missing_ok=True)
 
 
 def detach():
@@ -45,7 +45,10 @@ def detach():
 
 
 if __name__ == "__main__":
-    install()
+    try:
+        install()
+    finally:
+        LOCK.unlink(missing_ok=True)
 elif Path(sys.prefix).resolve() != ENV.resolve():
     if not READY.exists():
         print("First run: installing, up to two minutes.", file=sys.stderr, flush=True)
@@ -53,5 +56,7 @@ elif Path(sys.prefix).resolve() != ENV.resolve():
             LOCK.write_text("running")
             detach()
         while not READY.exists():
+            if not LOCK.exists():
+                sys.exit(f"Setup failed. See {ROOT / '.install.log'}")
             time.sleep(1)
     sys.exit(subprocess.run([PYTHON, *sys.argv]).returncode)

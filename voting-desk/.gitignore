@@ -3,6 +3,5 @@
 __pycache__/
 dist/voting-desk.zip
 data/edgar/
-.installed
 .installing
 .install.log

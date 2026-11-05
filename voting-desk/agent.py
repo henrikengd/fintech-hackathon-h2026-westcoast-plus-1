@@ -3,9 +3,9 @@
 Second look on top of the frozen system, reported separately. Every filing is dated, and code hides
 anything filed after the voting intention was due, so the agent cannot read the future.
 
-  uv run python agent.py run val 32      develop on 2024
-  uv run python agent.py run test 52     second look at the holdout
-  uv run python agent.py compare val
+  python agent.py run val 32      develop on 2024
+  python agent.py run test 52     second look at the holdout
+  python agent.py compare val
 """
 import html
 import json

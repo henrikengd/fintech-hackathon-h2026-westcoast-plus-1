@@ -112,7 +112,7 @@ EXTRA = ["lane", "lane_base", "draft", "rule", "section", "quote", "why", "cited
 
 
 def hashes():
-    files = ["desk.py", "run.py", "rules.json", "uv.lock", "data/real_votes.csv"]
+    files = ["desk.py", "run.py", "rules.json", "data/real_votes.csv"]
     return {f: sha256((desk.ROOT / f).read_bytes()).hexdigest() for f in files}
 
 

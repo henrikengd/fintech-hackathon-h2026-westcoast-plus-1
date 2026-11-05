@@ -39,7 +39,7 @@ The website's agent searches the filing and is the default. Untick it for the th
 | `run.py` | Evaluation stages and metrics |
 | `report.py` | One-page requirements response. Print the HTML from a browser for the PDF |
 | `rules.json` | NBIM guideline rules with dates |
-| `test_desk.py` | Offline tests: `uv run python -m unittest` |
+| `test_desk.py` | Offline tests: `python test_desk.py` |
 | `plugin/` | Plugin source. `python review.py pack` builds the zips |
 | `results/` | Saved results. `results/raw/` holds every model reply |
 
@@ -88,7 +88,7 @@ Holdout 2025-2026: 3,449 scored proposals, 169 votes against the board.
 ## Limits
 
 - Holdout counts, 2026 baselines and four outcomes were seen before the freeze. They were not used for tuning.
-- After the freeze we corrected reporting in `run.py`, including a rounding bug that had put the primary test at +19.0, plus evidence checks in `agent.py`. `uv.lock` also differs. `desk.py`, `rules.json` and the data match the freeze, so `desk.review` stays as unused code and `review.py` replaces it.
+- After the freeze we corrected reporting in `run.py`, including a rounding bug that had put the primary test at +19.0, plus evidence checks in `agent.py`. `uv.lock` was replaced by `requirements.txt`. `desk.py`, `rules.json` and the data match the freeze, so `desk.review` stays as unused code and `review.py` replaces it.
 - Live review uses the same checks and threshold, but agenda reading and document passages were not evaluated.
 - Most votes against the board turn on facts not on the ballot, and on engagement we cannot see.
 - 7.7% of proposals cite a deciding rule. The others cite the starting point of supporting the board.

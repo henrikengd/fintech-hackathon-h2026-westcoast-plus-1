@@ -1,9 +1,9 @@
 """Live review for the Claude plugin and the terminal. desk.py stays as frozen, so the live path lives here.
 
-  uv run python review.py                                 serve over stdio
-  uv run python review.py review agenda.pdf               three passes, the evaluated method
-  uv run python review.py review agenda.pdf research      evidence agent, more reading for the person
-  uv run python review.py pack                            build voting-desk-plugin.zip
+  python review.py                                 serve over stdio
+  python review.py review agenda.pdf               three passes, the evaluated method
+  python review.py review agenda.pdf research      evidence agent, more reading for the person
+  python review.py pack                            build voting-desk-plugin.zip
 """
 import boot  # noqa: F401
 import json

@@ -2,6 +2,7 @@
 
 The sheets use a fixed seed over holdout meetings, so nobody picked the examples.
 """
+import boot  # noqa: F401
 import json
 import random
 
