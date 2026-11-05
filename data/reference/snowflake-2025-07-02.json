@@ -1,0 +1,55 @@
+{
+  "meeting_id": "snowflake-2025-07-02",
+  "source": {
+    "document": "NBIM public voting intentions: Snowflake 2025-07-02",
+    "url": "https://www.nbim.no/en/responsible-investment/voting/our-voting-records/meeting/?m=1976170",
+    "document_date": "2026-11-05",
+    "version": "public-meeting-1976170-retrieved-2026-11-05",
+    "sha256": "77c3e8523dd0dc0912792bd5271a17044204ec2ca5f6ef9b4e496bce573fd7c0"
+  },
+  "vote_semantics": "voting_intention",
+  "votes": [
+    {
+      "proposal_id": "1a",
+      "vote": "FOR",
+      "board_recommendation": "FOR",
+      "raw_vote": "For"
+    },
+    {
+      "proposal_id": "1b",
+      "vote": "FOR",
+      "board_recommendation": "FOR",
+      "raw_vote": "For"
+    },
+    {
+      "proposal_id": "1c",
+      "vote": "FOR",
+      "board_recommendation": "FOR",
+      "raw_vote": "For"
+    },
+    {
+      "proposal_id": "2",
+      "vote": "MOT",
+      "board_recommendation": "FOR",
+      "raw_vote": "Against"
+    },
+    {
+      "proposal_id": "3",
+      "vote": "FOR",
+      "board_recommendation": "FOR",
+      "raw_vote": "For"
+    },
+    {
+      "proposal_id": "4",
+      "vote": "FOR",
+      "board_recommendation": "FOR",
+      "raw_vote": "For"
+    },
+    {
+      "proposal_id": "5",
+      "vote": "FOR",
+      "board_recommendation": "FOR",
+      "raw_vote": "For"
+    }
+  ]
+}
