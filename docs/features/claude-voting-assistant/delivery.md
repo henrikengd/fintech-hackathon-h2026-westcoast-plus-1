@@ -1,5 +1,31 @@
 # Leveransejournal
 
+## Aktiv leveranse, revisjon 2
+
+Startet 5. november 2026 etter brukerens `$deliver`. Godkjent kravgrunnlag er [spesifikasjon revisjon 2](spec.md), hovedissue #1. Fjernstandardgrenen er `main` ved `fb704fb17e907350f41ccc522e2a2dd613c1f108`; ingen åpen feature-PR ved oppstart. PR #10 er merget. De gamle arbeidstrærne og lokal konfigurasjon er bevart.
+
+Integrasjonsgren er `codex/claude-voting-verification`. Arbeidstrærne ligger under `/Users/henrik.noteless/.codex/worktrees/`, hver med repoets navn som undermappe. Bare koordinatoren integrerer og oppdaterer denne journalen.
+
+| Oppgave | Arbeider | Worktree-navn / gren | Tildelt base | Status |
+|---|---|---|---|---|
+| T-01 / #2 | `/root/verification_data` | `voting-data` / `codex/claude-voting-verification-t01` | `fb704fb` | Pågår: nye møter og historiske kilder |
+| T-04 / #5 | `/root/verification_assessment` | `voting-assessment` / `codex/claude-voting-verification-t04` | `fb704fb` | Pågår: dokumentuttrekk, kanoniske regelsitater og manuelle årsaker |
+| T-05 / #6 | `/root/verification_demo`, koordinator for faktisk chat | `voting-demo` / `codex/claude-voting-verification-t05` | `fb704fb` | Teknisk forberedelse pågår; brukeren oppgir nå innlogget Claude-konto |
+| T-06 / #7 | Ikke tildelt | Planlagt etter integrert #2 og #5 | | Blokkert for sluttkjøring |
+| T-07 / #8 | Koordinator | `voting-verification` / integrasjonsgren | `fb704fb` | Venter på #6 og #7 |
+
+Felles skrivetilgang er fordelt etter spesifikasjonen. T-04 eier `assessment.py`, `contracts.py` og `prepare_example.py`. T-01 eier nye data-/policyfiler og ny klargjøring. T-05 eier demooppsett og nødvendig serverarbeid. Alle betalte API-kall utføres av koordinatoren etter integrasjon, innen samlet USD 2. Rundens lokale kostnadsjournal ligger i Codex-arbeidsmappens `work/deliver-r2/budget.json`. Ingen modellkall er gjort i revisjon 2 ved denne oppstartskontrollen.
+
+### Verifisert grunnlag
+
+Låst installasjon på Python 3.12.12 fra eksisterende uv-cache passerte. Alle 37 eksisterende tester passerte på `fb704fb`. Første installasjonsforsøk pekte på standardcache og manglet uvicorn offline; riktig isolert cache løste dette uten endring av avhengigheter. Kode for #3 og #4 er integrert fra tidligere PR. Deres tidligere lokale MCP-verifikasjon står i den historiske journalen under.
+
+Claude-fanen viste først innlogging. Brukeren opplyste deretter at kontoen er innlogget og at den er separat fra kontoen med API-kreditter. API-nøkkelen er kopiert direkte til lokal ignorert `.env` i integrasjonsmappen med filmodus 0600. Ingen nøkkel er skrevet til journal eller logger. Faktisk connector-test gjenstår.
+
+Neste steg er å verifisere Claude-tilgangen, integrere arbeidercommits etter gjennomgang og kjøre utviklingspiloten før ny sluttmåling. Uavhengig full gjennomgang samt separate Spec- og Standards-gjennomganger gjenstår. Ingen ny PR er opprettet.
+
+## Historisk leveranse, revisjon 1
+
 > Status 5. november etter livepilot og Prepare revisjon 2: PR #10 er merget. Anthropic-tilgang er prøvd, med fem stemmevalg, to anbefalinger og tre manuelle saker i siste forsøk. Se [pilotgjennomgangen](pilot-review.md) og [gjeldende spesifikasjon](spec.md). Avsnittene under beskriver den tidligere leveransen og erstattes ikke som historisk bevis. Ny implementering er ikke startet av Prepare.
 
 Spesifikasjon revisjon 1. Hovedoppgave [#1](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/1). Basen er `main` ved `299e422b3d98d08a967669c2cc5e3175009d5007`. Integrasjonsgren er `codex/claude-voting-assistant`.
