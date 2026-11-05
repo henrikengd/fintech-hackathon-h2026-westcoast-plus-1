@@ -1,0 +1,618 @@
+{
+ "tau": 0.2560491658145022,
+ "rows": 3469,
+ "scored": 3449,
+ "against": 169,
+ "unscored_no_board_rec": 20,
+ "recall": 0.8520710059171598,
+ "cleared": 0.6732386198898231,
+ "lanes": {
+  "With board": 0.6732,
+  "Unclear": 0.2786,
+  "Against board": 0.0481
+ },
+ "system": {
+  "against_board_draft": {
+   "tp": 85,
+   "fp": 81,
+   "fn": 84,
+   "precision": 0.5120481927710844,
+   "recall": 0.5029585798816568
+  },
+  "literal_mot_draft": {
+   "tp": 101,
+   "fp": 106,
+   "fn": 79,
+   "precision": 0.48792270531400966,
+   "recall": 0.5611111111111111
+  },
+  "literal_mot_follow_board": {
+   "tp": 21,
+   "fp": 10,
+   "fn": 159,
+   "precision": 0.6774193548387096,
+   "recall": 0.11666666666666667
+  },
+  "literal_mot_2026": {
+   "tp": 42,
+   "fp": 56,
+   "fn": 24,
+   "precision": 0.42857142857142855,
+   "recall": 0.6363636363636364
+  },
+  "literal_mot_2026_follow_board": {
+   "tp": 8,
+   "fp": 6,
+   "fn": 58,
+   "precision": 0.5714285714285714,
+   "recall": 0.12121212121212122
+  }
+ },
+ "accuracy": {
+  "drafts": 0.9437518121194549,
+  "follow_board": 0.9510002899391128
+ },
+ "val": {
+  "recall": 0.9081632653061225,
+  "cleared": 0.682421667551779,
+  "against": 98
+ },
+ "companies": 194,
+ "citation_coverage": 0.07712380400115976,
+ "recall_ci": [
+  0.6890136927685065,
+  0.9411842928660825
+ ],
+ "cleared_ci": [
+  0.4268743754028169,
+  0.8063633688178328
+ ],
+ "screen_at_same_recall": 0.5749492606552624,
+ "primary": {
+  "test": "Cleared share of the full system minus the screen alone at the same realised recall on the holdout, paired company bootstrap. Everything else is descriptive.",
+  "difference": 0.09828935923456072,
+  "ci": [
+   0.003283915267168486,
+   0.29910826958505154
+  ]
+ },
+ "baselines": [
+  {
+   "method": "Follow the board",
+   "recall": 0.0,
+   "cleared": 1.0,
+   "precision": 0.0,
+   "pr_auc": 0.048999710060887214
+  },
+  {
+   "method": "Proposal type",
+   "recall": 0.8757396449704142,
+   "cleared": 0.31487387648593795,
+   "precision": 0.0626322471434617,
+   "pr_auc": 0.15624506917942171
+  },
+  {
+   "method": "Earlier vote at company",
+   "recall": 0.6923076923076923,
+   "cleared": 0.697013627138301,
+   "precision": 0.11196172248803828,
+   "pr_auc": 0.30106369903090635
+  },
+  {
+   "method": "Repeat the last vote",
+   "recall": 0.40828402366863903,
+   "cleared": 0.9660771238040011,
+   "precision": 0.5897435897435898,
+   "pr_auc": 0.26977679703193147
+  },
+  {
+   "method": "Claude, guidelines only",
+   "recall": 0.14792899408284024,
+   "cleared": 0.9869527399246159,
+   "precision": 0.5555555555555556,
+   "pr_auc": null
+  },
+  {
+   "method": "Text and precedent screen",
+   "recall": 0.8165680473372781,
+   "cleared": 0.6080023195129023,
+   "precision": 0.10207100591715976,
+   "pr_auc": 0.38810307982655484
+  },
+  {
+   "method": "Full system, all sent to a person",
+   "recall": 0.8520710059171598,
+   "cleared": 0.6732386198898231,
+   "precision": 0.12777284826974267,
+   "pr_auc": null
+  },
+  {
+   "method": "Full system, Against board lane only",
+   "recall": 0.5029585798816568,
+   "cleared": 0.9519,
+   "precision": 0.5120481927710844,
+   "pr_auc": null
+  }
+ ],
+ "by_year": {
+  "2025": {
+   "n": 1910,
+   "against": 103,
+   "recall": 0.845,
+   "cleared": 0.685
+  },
+  "2026": {
+   "n": 1539,
+   "against": 66,
+   "recall": 0.864,
+   "cleared": 0.658
+  }
+ },
+ "by_market": {
+  "DM": {
+   "n": 2033,
+   "against": 100,
+   "recall": 0.83,
+   "cleared": 0.705
+  },
+  "EM": {
+   "n": 1416,
+   "against": 69,
+   "recall": 0.884,
+   "cleared": 0.627
+  }
+ },
+ "by_type": {
+  "ARTICLES": {
+   "n": 85,
+   "against": 5,
+   "recall": 1.0,
+   "cleared": 0.094
+  },
+  "AUDITOR": {
+   "n": 303,
+   "against": 13,
+   "recall": 0.769,
+   "cleared": 0.891
+  },
+  "CLASSIFY_BOARD": {
+   "n": 1,
+   "against": 0,
+   "recall": 0.0,
+   "cleared": 1.0
+  },
+  "DIRECTOR_ELECTION": {
+   "n": 1643,
+   "against": 96,
+   "recall": 0.833,
+   "cleared": 0.662
+  },
+  "DIRECTOR_PAY": {
+   "n": 114,
+   "against": 1,
+   "recall": 0.0,
+   "cleared": 0.93
+  },
+  "DISCHARGE": {
+   "n": 202,
+   "against": 0,
+   "recall": 0.0,
+   "cleared": 0.381
+  },
+  "DIVIDEND": {
+   "n": 176,
+   "against": 0,
+   "recall": 0.0,
+   "cleared": 0.903
+  },
+  "EQUITY_PLAN": {
+   "n": 56,
+   "against": 3,
+   "recall": 1.0,
+   "cleared": 0.714
+  },
+  "FIN_STATEMENTS": {
+   "n": 226,
+   "against": 2,
+   "recall": 0.0,
+   "cleared": 0.916
+  },
+  "MERGER": {
+   "n": 10,
+   "against": 1,
+   "recall": 0.0,
+   "cleared": 0.7
+  },
+  "OTHER_BUSINESS": {
+   "n": 12,
+   "against": 12,
+   "recall": 1.0,
+   "cleared": 0.0
+  },
+  "OTHER_MGMT": {
+   "n": 185,
+   "against": 12,
+   "recall": 1.0,
+   "cleared": 0.622
+  },
+  "ROUTINE": {
+   "n": 72,
+   "against": 0,
+   "recall": 0.0,
+   "cleared": 0.944
+  },
+  "RPT": {
+   "n": 60,
+   "against": 2,
+   "recall": 1.0,
+   "cleared": 0.633
+  },
+  "SAY_ON_PAY": {
+   "n": 145,
+   "against": 15,
+   "recall": 1.0,
+   "cleared": 0.145
+  },
+  "SHARE_ISSUANCE": {
+   "n": 84,
+   "against": 2,
+   "recall": 0.0,
+   "cleared": 0.762
+  },
+  "SHARE_REPURCHASE": {
+   "n": 54,
+   "against": 0,
+   "recall": 0.0,
+   "cleared": 1.0
+  },
+  "SHP_GOVERNANCE": {
+   "n": 5,
+   "against": 4,
+   "recall": 1.0,
+   "cleared": 0.0
+  },
+  "SHP_INDEP_CHAIR": {
+   "n": 1,
+   "against": 1,
+   "recall": 1.0,
+   "cleared": 0.0
+  },
+  "SHP_OTHER": {
+   "n": 10,
+   "against": 0,
+   "recall": 0.0,
+   "cleared": 0.0
+  },
+  "SHP_SUSTAINABILITY": {
+   "n": 5,
+   "against": 0,
+   "recall": 0.0,
+   "cleared": 0.0
+  }
+ },
+ "cleared_routine_share": 0.326442721791559,
+ "cohorts": {
+  "excluding other business": {
+   "n": 3437,
+   "against": 157,
+   "recall": 0.841,
+   "cleared": 0.676
+  },
+  "no earlier against at company": {
+   "n": 1212,
+   "against": 21,
+   "recall": 0.619,
+   "cleared": 0.797
+  },
+  "first flag on this person or type": {
+   "n": 2404,
+   "against": 52,
+   "recall": 0.673,
+   "cleared": 0.816
+  }
+ },
+ "meetings": {
+  "n": 310,
+  "with_against": 109,
+  "caught": 93,
+  "fully_cleared": 31
+ },
+ "confidence": {
+  "High": {
+   "n": 946,
+   "against_rate": 0.022,
+   "draft_matches_nbim": 0.993
+  },
+  "Low": {
+   "n": 961,
+   "against_rate": 0.061,
+   "draft_matches_nbim": 0.908
+  },
+  "Medium": {
+   "n": 1542,
+   "against_rate": 0.058,
+   "draft_matches_nbim": 0.936
+  }
+ },
+ "confidence_bands": {
+  "High": {
+   "n": 2334,
+   "stated": 99.0,
+   "draft_matches_nbim": 0.989
+  },
+  "Low": {
+   "n": 264,
+   "stated": 50.7,
+   "draft_matches_nbim": 0.53
+  },
+  "Medium": {
+   "n": 851,
+   "stated": 91.0,
+   "draft_matches_nbim": 0.947
+  }
+ },
+ "coverage": {
+  "proposals": 3469,
+  "with_vote": 3469,
+  "with_confidence": 3469
+ },
+ "review_share": {
+  "individual": 0.3306428365523206,
+  "with_audit": 0.3611991928509657
+ },
+ "low_confidence_gate": {
+  "recall": 0.9349112426035503,
+  "cleared": 0.48419831835314586
+ },
+ "lane_excl_other_business": {
+  "tp": 73,
+  "fp": 81,
+  "fn": 84,
+  "precision": 0.474025974025974,
+  "recall": 0.46496815286624205
+ },
+ "policy_chair_ceo": {
+  "before": {
+   "n": 8,
+   "against": 6
+  },
+  "after": {
+   "n": 6,
+   "against": 0
+  }
+ },
+ "queue": {
+  "against_lane_items": 166,
+  "against_lane_precision": 0.5120481927710844,
+  "screen_top_same_size_precision": 0.3674698795180723,
+  "routed_items": 1127,
+  "routed_precision": 0.12777284826974267
+ },
+ "stability": 0.9776746883154538,
+ "failed_items": 7,
+ "section_match": {
+  "n": 166,
+  "drafted_with_rule": 92,
+  "hits": 84,
+  "share_of_all": 0.5060240963855421,
+  "type_baseline": 0.3795180722891566
+ },
+ "citations_verified": 1.0,
+ "fact_gate": {
+  "recall": 0.9704142011834319,
+  "cleared": 0.2609452015076834
+ },
+ "misses": {
+  "n": 25,
+  "named_a_fact": 20,
+  "by_section": {
+   "GVG 1.1": 7,
+   "GVG 1.3": 3,
+   "GVG 6.2": 3,
+   "GVG 5.1": 3,
+   "GVG 5.2": 2,
+   "GVG 6.1": 2,
+   "GVG 1.2": 1,
+   "GVG 2.3": 1,
+   "GVG 3.2": 1,
+   "GVG 3.1": 1,
+   "GVG 2.1": 1
+  },
+  "by_type": {
+   "DIRECTOR_ELECTION": 16,
+   "AUDITOR": 3,
+   "FIN_STATEMENTS": 2,
+   "SHARE_ISSUANCE": 2,
+   "MERGER": 1,
+   "DIRECTOR_PAY": 1
+  },
+  "by_country": {
+   "Japan": 7,
+   "United States": 3,
+   "India": 3,
+   "United Kingdom": 3,
+   "British Virgin Islands": 2,
+   "China": 2,
+   "Cayman Islands": 2,
+   "Latvia": 1
+  }
+ },
+ "policy_vs_practice": {
+  "rule_applied_nbim_supported": {
+   "3.2": 15,
+   "1.1": 11,
+   "3.3": 11,
+   "2.1": 9,
+   "6.3": 9,
+   "1.3": 8,
+   "4.3": 5,
+   "1.2": 3
+  },
+  "n": 81
+ },
+ "resistance": [
+  {
+   "payload": "literal",
+   "defences": true,
+   "items": 41,
+   "to_for": 2,
+   "to_avsta": 1,
+   "omitted": 0,
+   "reached_with_board": 0,
+   "flagged": 41
+  },
+  {
+   "payload": "literal",
+   "defences": false,
+   "items": 41,
+   "to_for": 2,
+   "to_avsta": 0,
+   "omitted": 2,
+   "reached_with_board": 0,
+   "flagged": 39
+  },
+  {
+   "payload": "paraphrase",
+   "defences": true,
+   "items": 41,
+   "to_for": 0,
+   "to_avsta": 0,
+   "omitted": 0,
+   "reached_with_board": 0,
+   "flagged": 41
+  },
+  {
+   "payload": "paraphrase",
+   "defences": false,
+   "items": 41,
+   "to_for": 1,
+   "to_avsta": 0,
+   "omitted": 0,
+   "reached_with_board": 0,
+   "flagged": 41
+  },
+  {
+   "payload": "soft",
+   "defences": true,
+   "items": 41,
+   "to_for": 1,
+   "to_avsta": 0,
+   "omitted": 0,
+   "reached_with_board": 0,
+   "flagged": 41
+  },
+  {
+   "payload": "control",
+   "defences": true,
+   "items": 41,
+   "to_for": 3,
+   "to_avsta": 0,
+   "omitted": 0,
+   "reached_with_board": 3,
+   "flagged": 1
+  }
+ ],
+ "masked": {
+  "items": 371,
+  "same_draft": 0.9407008086253369,
+  "against_found_named": 20,
+  "against_found_masked": 19,
+  "against": 29
+ },
+ "proxy": {
+  "items": 541,
+  "against": 36,
+  "ballot_only": {
+   "tp": 20,
+   "fp": 41,
+   "fn": 16,
+   "precision": 0.32786885245901637,
+   "recall": 0.5555555555555556
+  },
+  "with_proxy": {
+   "tp": 19,
+   "fp": 41,
+   "fn": 17,
+   "precision": 0.31666666666666665,
+   "recall": 0.5277777777777778
+  }
+ },
+ "cost_usd": 17.39848225,
+ "agent": {
+  "meetings": 52,
+  "items": 541,
+  "against": 36,
+  "frozen": {
+   "against_drafted": 20,
+   "false_flags": 41,
+   "precision": 0.328,
+   "draft_recall": 0.556,
+   "reaches_person": 0.917,
+   "cleared": 0.586
+  },
+  "agent": {
+   "against_drafted": 22,
+   "false_flags": 45,
+   "precision": 0.328,
+   "draft_recall": 0.611,
+   "reaches_person": 0.917,
+   "cleared": 0.444
+  },
+  "failed_meetings": 0,
+  "avg_tool_calls": 4.3,
+  "evidence_verified_share": 0.802,
+  "cost_usd": 3.27
+ },
+ "models_2024_12_meetings": {
+  "val_haiku": {
+   "meetings": 12,
+   "items": 168,
+   "against": 5,
+   "frozen": {
+    "against_drafted": 5,
+    "false_flags": 13,
+    "precision": 0.278,
+    "draft_recall": 1.0,
+    "reaches_person": 1.0,
+    "cleared": 0.601
+   },
+   "agent": {
+    "against_drafted": 5,
+    "false_flags": 12,
+    "precision": 0.294,
+    "draft_recall": 1.0,
+    "reaches_person": 1.0,
+    "cleared": 0.44
+   },
+   "failed_meetings": 0,
+   "avg_tool_calls": 9.3,
+   "evidence_verified_share": 0.881,
+   "cost_usd": 1.84
+  },
+  "val_opus": {
+   "meetings": 12,
+   "items": 168,
+   "against": 5,
+   "frozen": {
+    "against_drafted": 5,
+    "false_flags": 13,
+    "precision": 0.278,
+    "draft_recall": 1.0,
+    "reaches_person": 1.0,
+    "cleared": 0.601
+   },
+   "agent": {
+    "against_drafted": 5,
+    "false_flags": 10,
+    "precision": 0.333,
+    "draft_recall": 1.0,
+    "reaches_person": 1.0,
+    "cleared": 0.476
+   },
+   "failed_meetings": 0,
+   "avg_tool_calls": 7.7,
+   "evidence_verified_share": 0.899,
+   "cost_usd": 1.23
+  }
+ }
+}

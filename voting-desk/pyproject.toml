@@ -1,0 +1,17 @@
+[project]
+name = "voting-desk"
+version = "0.1.0"
+description = "Drafts NBIM's vote per proposal and routes uncertain items to a person"
+requires-python = "==3.12.*"
+dependencies = [
+    "anthropic>=2.5.0",
+    "numpy>=2.0",
+    "joblib>=1.4",
+    "mcp>=1.30.0",
+    "pandas>=2.2",
+    "pydantic>=2.0",
+    "pypdf>=5.0",
+    "python-dotenv>=1.0",
+    "scikit-learn>=1.5",
+    "scipy>=1.13",
+]

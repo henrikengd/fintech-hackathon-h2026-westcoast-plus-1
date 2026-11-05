@@ -1,0 +1,8 @@
+.env
+.venv/
+__pycache__/
+data/
+dist/
+.installed
+.installing
+.install.log

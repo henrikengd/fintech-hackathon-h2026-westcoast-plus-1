@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "voting-desk": {
+      "command": "python",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/review.py"
+      ]
+    }
+  }
+}

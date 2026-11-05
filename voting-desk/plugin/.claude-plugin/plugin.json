@@ -1,0 +1,8 @@
+{
+  "name": "voting-desk",
+  "version": "0.1.0",
+  "description": "Drafts voting intentions from NBIM's published guidelines and routes uncertain proposals to a stewardship manager. Student prototype, not an NBIM product.",
+  "author": {
+    "name": "Westcoast + 1"
+  }
+}

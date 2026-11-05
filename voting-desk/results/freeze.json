@@ -1,0 +1,19 @@
+{
+ "frozen_at": "2026-11-05T13:18:07.986183+00:00",
+ "model": "claude-sonnet-5-5",
+ "effort": "medium",
+ "passes": 3,
+ "tau": 0.2560491658145022,
+ "target_recall": 0.9,
+ "prompt_hash": "4ed6446643ed",
+ "primary_test": "Cleared share of the full system minus the screen alone at the same realised recall on the holdout, paired company bootstrap. Everything else is descriptive.",
+ "failure_rule": "Transport errors are retried by the SDK. Anything still failed goes to Unclear and is never rerun.",
+ "walk_forward": "Holdout prompts contain earlier holdout votes, as production would. Screen stays fitted on 2019-2023.",
+ "hashes": {
+  "desk.py": "484c37e856b9118a14b4a0fc8d6e78d5c63f851bc304403105a83e63b21092db",
+  "run.py": "8fba12af259c9cf637c8b6db349fc3d5061900bf0ff2003a3e36e384cf5aacf9",
+  "rules.json": "5e8e298140924bc944751097db2f22796988f6e38cbb9747af915737ac76f3d5",
+  "uv.lock": "a146117a7b624d2f8b079f5e32a8ede16e07394fe2f88738a218382c952830c5",
+  "data/real_votes.csv": "71ba5135e7ba9d64c943f158bb510ffab53f34203f4c2875fc43352419e525e6"
+ }
+}
