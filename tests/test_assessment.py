@@ -315,7 +315,7 @@ class AssessmentTests(unittest.TestCase):
         row["factual_sources"][0]["quote"] = table
         run, _, _ = self.run_with(meeting, [search(), answer(row)])
         self.assertEqual(run.status, "complete")
-        self.assertEqual(run.assessments[0].factual_sources[0].quote, table)
+        self.assertEqual(run.assessments[0].factual_sources[0].quote, meeting.proposals[0].sources[0].quote)
         row["factual_sources"][0]["quote"] = table.replace("277", "999")
         run, _, _ = self.run_with(meeting, [search(), answer(row)])
         self.assertEqual(run.status, "partial")
