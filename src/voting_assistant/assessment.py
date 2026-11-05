@@ -213,7 +213,9 @@ def _quoted_source(source: Source, quote: str, excerpt: str) -> Source:
     quoted = _normalized(quote)
     if not quoted or quoted not in _normalized(excerpt):
         raise ValueError("Sitatet kan ikke finnes igjen i kilden.")
-    return source.model_copy(update={"quote": quote})
+    # Preserve the checked source context, including operands and qualifiers the model omitted.
+    # The exact model-selected span remains in raw_answer; this is server-attached evidence.
+    return source.model_copy(update={"quote": excerpt})
 
 
 def _fact_source(citation: _FactCitation, facts: list[Source]) -> Source:

@@ -47,3 +47,9 @@ Fylles fra ny rapport, uten å erstatte første forsøk. Registrer rapportsti/ha
 | 3, revisor | Avventer livekjøring | Avventer | Avventer | Avventer |
 
 For hver rad kontrolleres alle vedlagte regel- og faktakilder og at anbefaling, mangler og usikkerhet ikke motsier hverandre. Skill mellom reell informasjonsmangel og teknisk/valideringsfeil. Oppgi feil eller uavklarte vilkår; samsvar med NBIM er ikke alene godkjent begrunnelseskvalitet. Ikke bruk denne utviklingskontrollen som sluttmåling eller som bevis for faktisk Claude-chat.
+
+### Kildekontekst etter faktisk utviklingskontroll
+
+Det andre utviklingsforsøket (`data/raw/api-attack-r2/original-run.json`, kode `46660aa`) fullførte alle fem svar som manuell sjekk, USD 0,0139135. Kontroll av alle fem viste at modellens eksakte faktasitater kunne være for korte: navn uten påfølgende uavhengighetsvurdering, og revisortall uten samtlige operander. Det var teksttreff, men utilstrekkelige utdrag for flere påstander. Første svar er bevart.
+
+Faktakilden i nye rapporter får derfor hele det opprinnelige kontrollerte sideutdraget etter at modellens valgte sitat er validert. Ingen tekst fra usiterte sider legges til. `raw_answer` beholder modellens eget korte sitat, og valideringen avviser fortsatt endrede beløp eller ukjent tekst. Dette gjør kildene etterprøvbare, men beviser ikke at modellens slutning er riktig. Thomas-begrunnelsen i dette forsøket forenklet størrelses-/kontrollvilkår og brukte styresammensetningen før Gillis' avgang. Null anbefaling beholdes; begrunnelsen er ikke et godkjent stemmeråd.

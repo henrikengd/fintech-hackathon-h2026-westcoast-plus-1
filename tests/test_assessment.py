@@ -207,6 +207,18 @@ class AssessmentTests(unittest.TestCase):
         self.assertEqual(len(payload["shared_excerpts"]), 1)
         self.assertEqual(len(payload["proposals"][0]["factual_excerpts"]), 1)
 
+    def test_short_valid_fact_quote_retains_complete_original_source_context(self):
+        meeting = agenda("1")
+        full_text = "Fiscal 2025 fees in USD thousands: tax 277; total 3170. " + FACT
+        meeting.proposals[0].sources[0] = PROPOSAL_SOURCE.model_copy(update={"quote": full_text})
+        row = recommendation()
+        run, _, _ = self.run_with(meeting, [search(), answer(row)])
+        self.assertEqual(run.status, "complete")
+        source = run.assessments[0].factual_sources[0]
+        self.assertEqual(source.quote, full_text)
+        self.assertEqual((source.page, source.sha256), (PROPOSAL_SOURCE.page, PROPOSAL_SOURCE.sha256))
+        self.assertEqual(json.loads(run.raw_answer)["assessments"][0]["factual_sources"][0]["quote"], FACT)
+
     def test_duplicate_missing_and_unknown_ids_never_disappear(self):
         run, _, _ = self.run_with(agenda("1", "2", "3"), [
             search(), answer(recommendation(), recommendation(), recommendation("3"), recommendation("4")),
