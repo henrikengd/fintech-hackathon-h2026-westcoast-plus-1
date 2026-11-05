@@ -9,7 +9,7 @@ import unittest
 from anthropic import Anthropic
 import httpx2
 
-from voting_assistant.assessment import ASSESSMENT_PROMPT, assess
+from voting_assistant.assessment import ASSESSMENT_PROMPT, _facts, _user_input, assess
 from voting_assistant.contracts import Agenda, Assessment, Guideline, Proposal, Source
 
 MEETING = date(2025, 7, 1)
@@ -141,6 +141,71 @@ class AssessmentTests(unittest.TestCase):
         self.assertEqual(run.cost_usd, Decimal("0.0084"))
         self.assertEqual(charges[-1], run.cost_usd)
         self.assertGreater(charges[0], charges[1])
+
+    def test_shared_excerpts_reconstruct_every_local_source_without_changing_data(self):
+        meeting = agenda("1", "2")
+        exact_text = "  Fiscal year 2025\nTax fees \u200b277\nTotal fees 3170 \n"
+        near_match = exact_text.replace("\u200b", "")
+        meeting.proposals[0].sources += [PROPOSAL_SOURCE.model_copy(update={"quote": exact_text})]
+        meeting.proposals[1].sources = [
+            PROPOSAL_SOURCE.model_copy(update={"document": "Other notice", "page": 9, "section": "Other"}),
+            PROPOSAL_SOURCE.model_copy(update={"quote": exact_text, "page": 12}),
+            PROPOSAL_SOURCE.model_copy(update={"quote": near_match, "page": 13}),
+        ]
+        before = meeting.model_dump_json()
+        facts = _facts(meeting)
+        payload = json.loads(_user_input(meeting, facts))
+        self.assertEqual(len(payload["shared_excerpts"]), 3)
+        self.assertCountEqual(payload["shared_excerpts"].values(), [FACT, exact_text, near_match])
+        self.assertEqual([row["proposal_id"] for row in payload["proposals"]], ["1", "2"])
+        for row in payload["proposals"]:
+            reconstructed = [
+                {**{key: value for key, value in source.items() if key != "excerpt_id"},
+                 "quote": payload["shared_excerpts"][source["excerpt_id"]]}
+                for source in row["factual_excerpts"]
+            ]
+            expected = [
+                {"source_number": number, "document": source.document, "section": source.section,
+                 "page": source.page, "quote": source.quote}
+                for number, source in enumerate(facts[row["proposal_id"]], 1)
+            ]
+            self.assertEqual(reconstructed, expected)
+        self.assertEqual(meeting.model_dump_json(), before)
+
+    def test_shared_catalog_does_not_authorize_another_proposals_fact(self):
+        meeting = agenda("1", "2")
+        second_fact = "Only the second nominee has this documented qualification."
+        meeting.proposals[1].sources = [PROPOSAL_SOURCE.model_copy(update={"quote": second_fact, "page": 9})]
+        unauthorized = recommendation("1")
+        unauthorized["factual_sources"] = [{"source_number": 2, "quote": second_fact}]
+        authorized = recommendation("2")
+        authorized["factual_sources"] = [{"source_number": 1, "quote": second_fact}]
+        run, requests, _ = self.run_with(meeting, [search(), answer(unauthorized, authorized)])
+        payload = json.loads(requests[0][1]["messages"][0]["content"])
+        self.assertIn(second_fact, payload["shared_excerpts"].values())
+        self.assertEqual(run.status, "partial")
+        self.assertIsNone(run.assessments[0].recommendation)
+        self.assertEqual(run.assessments[0].factual_sources, [])
+        self.assertEqual(run.assessments[1].status, "assessed")
+        self.assertEqual(run.assessments[1].factual_sources[0].page, 9)
+
+    def test_shared_input_still_excludes_labels_and_ineligible_sources(self):
+        meeting = agenda("1")
+        meeting.company_id = "company-reference-marker"
+        meeting.meeting_id = "meeting-reference-marker"
+        meeting.document_source = PROPOSAL_SOURCE.model_copy(update={"quote": "unused-document-reference"})
+        meeting.proposals[0].sources += [
+            PROPOSAL_SOURCE.model_copy(update={"quote": "future-fact-marker", "document_date": date(2026, 1, 1)}),
+            PROPOSAL_SOURCE.model_copy(update={"quote": "unlocated-fact-marker", "page": None, "section": None}),
+        ]
+        serialized = _user_input(meeting, _facts(meeting))
+        for excluded in ("company-reference-marker", "meeting-reference-marker", "unused-document-reference",
+                         "future-fact-marker", "unlocated-fact-marker", "unused_derived_type"):
+            self.assertNotIn(excluded, serialized)
+        payload = json.loads(serialized)
+        self.assertEqual(set(payload), {"meeting_date", "shared_excerpts", "proposals"})
+        self.assertEqual(len(payload["shared_excerpts"]), 1)
+        self.assertEqual(len(payload["proposals"][0]["factual_excerpts"]), 1)
 
     def test_duplicate_missing_and_unknown_ids_never_disappear(self):
         run, _, _ = self.run_with(agenda("1", "2", "3"), [

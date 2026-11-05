@@ -26,7 +26,10 @@ Establish applicability, including market and company size when the rule depends
 these facts from a company name or listing alone. If required applicability facts are missing, use manual_review.
 Reference each rule by guideline_id and policy_version only: the system attaches the full canonical section,
 including its conditions. A rule reference does not establish that the reasoning is correct. Do not write a
-rule quote yourself. Quote contiguous passages exactly from the proposal's numbered factual excerpts.
+rule quote yourself. Each proposal's factual_excerpts contains local source_number values and excerpt_id
+references. Read the exact text for each excerpt_id from shared_excerpts. Only use excerpts referenced
+by that proposal; the shared catalog does not make another proposal's sources available to it. Quote
+contiguous passages exactly and cite the proposal's local source_number, not the shared excerpt_id.
 Every factual claim must be supported by these quotes. For numerical comparisons, quote the table or text
 containing all operands, their units and periods, and state the calculation. Do not cite a surrounding heading
 instead of the numbers. Check all relevant opposition conditions; one condition is not an exhaustive 'only if'.
@@ -167,26 +170,34 @@ def _facts(agenda: Agenda) -> dict[str, list[Source]]:
 
 def _user_input(agenda: Agenda, facts: dict[str, list[Source]]) -> str:
     # Explicit allowlist. References, board labels and derived classifications have no model-input role.
+    # Deduplicate only exact text; each proposal retains its own source numbering and metadata.
+    shared_excerpts = {}
+    excerpt_ids = {}
+    proposals = []
+    for proposal in agenda.proposals:
+        factual_excerpts = []
+        for number, source in enumerate(facts[proposal.proposal_id], 1):
+            if source.quote not in excerpt_ids:
+                excerpt_id = f"excerpt_{len(shared_excerpts) + 1}"
+                excerpt_ids[source.quote] = excerpt_id
+                shared_excerpts[excerpt_id] = source.quote
+            factual_excerpts.append({
+                "source_number": number,
+                "document": source.document,
+                "section": source.section,
+                "page": source.page,
+                "excerpt_id": excerpt_ids[source.quote],
+            })
+        proposals.append({
+            "proposal_id": proposal.proposal_id,
+            "proposal_text": proposal.original_text,
+            "factual_excerpts": factual_excerpts,
+        })
     return json.dumps(
         {
             "meeting_date": agenda.meeting_date.isoformat(),
-            "proposals": [
-                {
-                    "proposal_id": proposal.proposal_id,
-                    "proposal_text": proposal.original_text,
-                    "factual_excerpts": [
-                        {
-                            "source_number": number,
-                            "document": source.document,
-                            "section": source.section,
-                            "page": source.page,
-                            "quote": source.quote,
-                        }
-                        for number, source in enumerate(facts[proposal.proposal_id], 1)
-                    ],
-                }
-                for proposal in agenda.proposals
-            ],
+            "shared_excerpts": shared_excerpts,
+            "proposals": proposals,
         },
         ensure_ascii=False,
     )
