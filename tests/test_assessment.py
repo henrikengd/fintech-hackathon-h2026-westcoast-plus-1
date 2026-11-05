@@ -10,7 +10,7 @@ from anthropic import Anthropic
 import httpx2
 
 from voting_assistant.assessment import ASSESSMENT_PROMPT, assess
-from voting_assistant.contracts import Agenda, Guideline, Proposal, Source
+from voting_assistant.contracts import Agenda, Assessment, Guideline, Proposal, Source
 
 MEETING = date(2025, 7, 1)
 FACT = "The nominee chairs the audit committee."
@@ -51,7 +51,7 @@ def recommendation(proposal_id: str = "1") -> dict:
         "proposal_id": proposal_id, "status": "assessed", "recommendation": "AVSTÅ",
         "rationale": "The rule and the source were checked.",
         "policy_sources": [
-            {"guideline_id": RULE.guideline_id, "policy_version": RULE.policy_version, "quote": POLICY}
+            {"guideline_id": RULE.guideline_id, "policy_version": RULE.policy_version}
         ],
         "factual_sources": [{"source_number": 1, "quote": FACT}],
         "missing_information": [], "uncertainty_reason": None,
@@ -159,6 +159,86 @@ class AssessmentTests(unittest.TestCase):
         run, _, _ = self.run_with(agenda("1"), [answer(row)])
         self.assertEqual(run.status, "complete")
         self.assertEqual(run.assessments[0].status, "manual_review")
+        self.assertIsNone(run.assessments[0].recommendation)
+        self.assertEqual(run.assessments[0].missing_information, ["Nominee independence"])
+        self.assertEqual(run.assessments[0].validation_errors, [])
+        self.assertIsNone(run.assessments[0].unverified_explanation)
+
+    def test_canonical_rule_preserves_scope_and_rejects_model_authored_quotes(self):
+        full_rule = RULE.model_copy(update={
+            "text": "At a large- or mid-cap company in developed markets, "
+                    "audit committee members should be independent. Other conditions also apply.",
+        })
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(recommendation())], index=FakeIndex(full_rule))
+        self.assertEqual(run.status, "complete")
+        self.assertEqual(run.assessments[0].policy_sources[0].quote, full_rule.text)
+        for quote in (POLICY, full_rule.text, "A fabricated rule"):
+            row = recommendation()
+            row["policy_sources"][0]["quote"] = quote
+            run, _, _ = self.run_with(agenda("1"), [search(), answer(row)], index=FakeIndex(full_rule))
+            self.assertEqual(run.status, "partial")
+            self.assertIsNone(run.assessments[0].recommendation)
+            self.assertEqual(run.assessments[0].policy_sources, [])
+
+    def test_wrong_rule_id_or_version_is_not_canonicalized(self):
+        for key in ("guideline_id", "policy_version"):
+            row = recommendation()
+            row["policy_sources"][0][key] = "unseen"
+            run, _, _ = self.run_with(agenda("1"), [search(), answer(row)])
+            self.assertEqual(run.status, "partial")
+            self.assertIsNone(run.assessments[0].recommendation)
+            self.assertEqual(run.assessments[0].policy_sources, [])
+
+    def test_invalid_fact_preserves_separate_unverified_explanation(self):
+        row = recommendation()
+        row.update({
+            "status": "manual_review", "recommendation": None,
+            "rationale": "The market and size classification are missing.",
+            "missing_information": ["Market classification", "Company size classification"],
+            "uncertainty_reason": "Cannot establish which independence threshold applies.",
+        })
+        row["factual_sources"][0]["quote"] = "No such factual passage exists."
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(row)])
+        result = run.assessments[0]
+        self.assertEqual(run.status, "partial")
+        self.assertEqual(result.status, "manual_review")
+        self.assertIsNone(result.recommendation)
+        self.assertEqual(result.policy_sources, [])
+        self.assertEqual(result.factual_sources, [])
+        self.assertIn("Sitatet", result.validation_errors[0])
+        self.assertEqual(result.rationale, result.validation_errors[0])
+        self.assertEqual(result.unverified_explanation.rationale, row["rationale"])
+        self.assertEqual(result.unverified_explanation.missing_information, row["missing_information"])
+        self.assertEqual(result.unverified_explanation.uncertainty_reason, row["uncertainty_reason"])
+
+    def test_missing_applicability_cannot_become_a_recommendation(self):
+        row = recommendation()
+        row["missing_information"] = ["Company size classification required by the rule"]
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(row)])
+        self.assertEqual(run.status, "partial")
+        self.assertIsNone(run.assessments[0].recommendation)
+        self.assertEqual(run.assessments[0].unverified_explanation.missing_information, row["missing_information"])
+
+    def test_old_assessment_records_remain_readable(self):
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(recommendation())])
+        legacy = run.assessments[0].model_dump(exclude={"validation_errors", "unverified_explanation"})
+        restored = Assessment.model_validate(legacy)
+        self.assertEqual(restored.validation_errors, [])
+        self.assertIsNone(restored.unverified_explanation)
+
+    def test_numerical_fact_citation_preserves_operands_units_and_periods(self):
+        table = "Fiscal year 2025 (USD thousands)\nTax fees 277\nTotal fees 3170"
+        meeting = agenda("1")
+        meeting.proposals[0].sources = [PROPOSAL_SOURCE.model_copy(update={"quote": table.replace("277", "\u200b277")})]
+        row = recommendation()
+        row["rationale"] = "Tax fees are 277 / 3170 = 8.74% of total fees in fiscal 2025."
+        row["factual_sources"][0]["quote"] = table
+        run, _, _ = self.run_with(meeting, [search(), answer(row)])
+        self.assertEqual(run.status, "complete")
+        self.assertEqual(run.assessments[0].factual_sources[0].quote, table)
+        row["factual_sources"][0]["quote"] = table.replace("277", "999")
+        run, _, _ = self.run_with(meeting, [search(), answer(row)])
+        self.assertEqual(run.status, "partial")
         self.assertIsNone(run.assessments[0].recommendation)
 
     def test_empty_search_requires_manual_review(self):
