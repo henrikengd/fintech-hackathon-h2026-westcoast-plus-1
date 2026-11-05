@@ -65,7 +65,78 @@
   ],
   "project_default_repository": "henrikengd/fintech-hackathon-h2026-westcoast-plus-1",
   "base_branch": "main",
-  "integration_branch": "codex/claude-voting-assistant",
-  "revision": 1,
-  "status": "published"
+  "integration_branch": "codex/claude-voting-verification",
+  "revision": 2,
+  "status": "published",
+  "base_code_sha": "a9bda4903c3f9ae03fab759e45b704503d462c28",
+  "integration_branch_created": false,
+  "relationships_verified_at": "2026-11-05T13:15:49.569889+00:00",
+  "dependencies": {
+    "2": [],
+    "3": [],
+    "4": [
+      3
+    ],
+    "5": [
+      4
+    ],
+    "6": [
+      4
+    ],
+    "7": [
+      2,
+      5
+    ],
+    "8": [
+      6,
+      7
+    ]
+  },
+  "updated_issues": [
+    1,
+    2,
+    5,
+    6,
+    7,
+    8
+  ],
+  "closed_issues_preserved": [
+    3,
+    4
+  ],
+  "ready_issues": [
+    2,
+    5
+  ],
+  "external_blockers": {
+    "6": "Lagets Claude-konto og nettverk må være tilgjengelig for faktisk liveprøve."
+  },
+  "project_item_statuses": {
+    "1": "Todo",
+    "2": "Todo",
+    "3": "Done",
+    "4": "Done",
+    "5": "Todo",
+    "6": "Todo",
+    "7": "Todo",
+    "8": "Todo"
+  },
+  "project_verified_via": "Innlogget GitHub-prosjekttavle, 5. november 2026",
+  "publication_method": "Eksisterende GitHub CLI-tilgang; connectorens issue-skrivetilgang ga 403.",
+  "approval_source": "Tidligere eksplisitt publiseringsoppdrag for repo/prosjekt/issues, videreført ved brukerens OK $prepare etter pilotgjennomgangen 5. november 2026.",
+  "plan_checks": {
+    "acyclic": true,
+    "requirements_covered": [
+      "F-01",
+      "F-02",
+      "F-03",
+      "F-04",
+      "F-05",
+      "F-06",
+      "F-07",
+      "F-08",
+      "F-09"
+    ],
+    "independent_plan_review": "Gjennomført; kildekrav i chat, Anthropic/NBIM-presisering og eierskap til utviklingsmanifest er rettet."
+  }
 }

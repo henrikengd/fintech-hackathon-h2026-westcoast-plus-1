@@ -1,5 +1,7 @@
 # Leveransejournal
 
+> Status 5. november etter livepilot og Prepare revisjon 2: PR #10 er merget. Anthropic-tilgang er prøvd, med fem stemmevalg, to anbefalinger og tre manuelle saker i siste forsøk. Se [pilotgjennomgangen](pilot-review.md) og [gjeldende spesifikasjon](spec.md). Avsnittene under beskriver den tidligere leveransen og erstattes ikke som historisk bevis. Ny implementering er ikke startet av Prepare.
+
 Spesifikasjon revisjon 1. Hovedoppgave [#1](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/1). Basen er `main` ved `299e422b3d98d08a967669c2cc5e3175009d5007`. Integrasjonsgren er `codex/claude-voting-assistant`.
 
 Ved oppstart var alle sju deloppgaver åpne. Avhengighetene i GitHub samsvarte med spesifikasjonen. Det fantes ingen feature-PR. Python 3.12.12 og uv 0.10.2 ble installert isolert i prosjektets arbeidsmappe. Arbeidergrenene bruker prefikset `codex/claude-voting-assistant-`. Arbeidstrærne ligger under `work/deliver/` i den lokale Codex-arbeidsmappen. Kjør `git worktree list` for fullstendige stier.
