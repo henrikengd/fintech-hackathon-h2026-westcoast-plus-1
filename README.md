@@ -14,10 +14,14 @@ Legg inn eventuelle oppsettsteg og én kommando som reproduserer hovedresultatet
 
 ## Datakilder
 
-Oppgi åpne datakilder med URL og beskriv eventuelle syntetiske data.
+Arrangøren har levert `real_votes.csv` og `npx_votes.csv`. Se [datakontrollen](docs/features/claude-voting-assistant/data-review.md) og [undersøkelsen av N-PX-feltene](docs/features/claude-voting-assistant/research/npx-provenance.md).
+
+Originalfilene oppbevares lokalt i `data/raw/` og følger ikke Git. Ved ny checkout må de hentes fra arrangøren og legges der. [Kontrollsummer](docs/features/claude-voting-assistant/data-inventory.json) identifiserer riktig versjon. Opprinnelige eksportkilder og vilkår for viderepublisering er ennå ikke dokumentert.
+
+Stemmedata brukes som evalueringsreferanse. RAG skal søke i daterte retningslinjer. N-PX-filen holdes adskilt fra NBIM-målingen til opphav og felter er kontrollert.
 
 ## KI og kodekreditering
 
-- OpenAI Codex ble brukt til repooppsett, avklaring av scope, undersøkelse av Claude-integrasjonen og utarbeiding av spesifikasjon og GitHub-oppgaver.
+- OpenAI Codex ble brukt til repooppsett, avklaring av scope, undersøkelse av Claude-integrasjonen og utarbeiding av spesifikasjon og GitHub-oppgaver, samt datakontroll og kildeundersøkelse.
 
 Krediter eventuell kode fra startpakken eller andre prosjekter her.

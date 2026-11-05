@@ -67,6 +67,14 @@ Chatdemo og API-evaluering har ulike kjøremiljøer. Bruk samme vurderingsinstru
 
 Utenfor førsteversjonen ligger automatisk stemmeavgivning, selvstendig nettsøk etter manglende selskapsopplysninger, NBIMs interne systemer, utrulling i NBIMs organisasjon og case 2. Førsteversjonen viser manuell sjekk når grunnlaget ikke strekker til.
 
+## Datatillegg 5. november 2026
+
+Arrangøren har levert to CSV-er. [Datakontrollen](data-review.md), [filinventaret](data-inventory.json) og [N-PX-undersøkelsen](research/npx-provenance.md) konkretiserer datakravene i T-01 og T-06. `real_votes.csv` er kandidat til NBIM-referansesett. `npx_votes.csv` holdes adskilt til forvalter og feltenes betydning er dokumentert. CSV-import kan forberedes uten en fungerende NBIM-nøkkel, mens tilgangsverifikasjon og kobling til innkallinger og historiske regler fortsatt gjenstår.
+
+Normalisert MOT i disse CSV-ene gjelder Against/Withhold på forslaget. Det er forskjellig fra «mot styrets anbefaling» i lagets separate datanotat. FOR/MOT/AVSTÅ-kontrakten gjelder forslaget; avvik fra styret må rapporteres separat. N-PX-feltet `managementRecommendation` kan inneholde samsvar med styret og skal ikke uten kildekontroll behandles som styrets anbefaling. Avledede fasitfelt og uavklarte injection-flagg er ikke modellinput.
+
+Produktomfang og akseptanse-ID-er er uendret. Ingen endelig testdeling eller modellkjøring er utført med de nye filene.
+
 ## Oppgaveplan
 
 | Oppgave | Leveranse | Krav | Blokkert av |
