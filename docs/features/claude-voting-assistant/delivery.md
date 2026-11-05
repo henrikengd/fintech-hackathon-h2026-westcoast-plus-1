@@ -7,8 +7,8 @@ Ved oppstart var alle sju deloppgaver åpne. Avhengighetene i GitHub samsvarte m
 | Oppgave | Arbeider og tre | Base | Arbeidercommit → integrert | Status |
 |---|---|---|---|---|
 | T-01 / #2 | data, `t01` | `299e422` | `7b18205` → `122f238` | Filimport og to offentlige møteavstemminger. Live API, konto, kreditter og historisk virkningsperiode gjenstår. |
-| T-02 / #3 | foundation, `t02` | `299e422` | `afb9aba` → `20e0038` | Ren låst installasjon, kontrakter, CLI og tester kontrollert lokalt. |
-| T-03 / #4 | foundation, `t03` | `20e0038` | `65149df` → `31929a5` | 18 daterte regelavsnitt og begge MCP-verktøyene verifisert lokalt. |
+| T-02 / #3 | foundation, `t02` | `299e422` | `afb9aba` → `20e0038` | Lukket i GitHub etter ren låst installasjon, kontrakt- og CLI-test og grønn CI. |
+| T-03 / #4 | foundation, `t03` | `20e0038` | `65149df` → `31929a5` | Lukket i GitHub etter verifisering av 18 regelavsnitt og begge MCP-verktøyene. |
 | T-04 / #5 | assessment, `t04` | `20e0038` | `b615c9f` → `a83b4c2` | API- og kildevalideringskode testet med simulert transport. Live-kjøring og manuell gjennomgang av faktiske modellresultater gjenstår. |
 | T-05 / #6 | koordinator | `31929a5` | | HTTPS-oppsett og demo dokumentert. Faktisk Claude-konto, tunnel og ny samtale etter omstart gjenstår. |
 | T-06 / #7 | data, `t06` | `122f238` | `a3dcef9` → `68b814a` | Tidsdelt pilot, rapport og gjenopptak testet med simulert transport. Betalt kjøring og faktisk motstandstest gjenstår. |
@@ -36,3 +36,10 @@ Tre uavhengige gjennomganger dekket korrekthet, spesifikasjon og standarder for 
 `594cb08` retter feilhåndteringen, låser kildehashen, samordner søkegrensene og dokumenterer CCC. De tre gjennomgangene kontrollerte rettingene. Ren installasjon, 34 tester, MCP over lokal HTTP og evalueringsflyten med simulert Anthropic-transport passerte på `594cb08`.
 
 Koden kan vurderes i en PR. Full leveranse avventer lagets live-verifikasjon. Hovedoppgaven forblir åpen.
+
+
+## Pull request
+
+[PR #10](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/pull/10) er åpen som utkast mot `main`. [GitHub Actions](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/actions/runs/42020548597) passerte på `8fdf25c`, som har samme kode som den gjennomgåtte `594cb08`. Oppgave #3 og #4 er lukket med testbevis. Oppgave #2, #5, #6, #7 og #8 er åpne. PR-siden viser sjekkene for gjeldende revisjon.
+
+Neste steg er å kjøre med lagets API-tilgang, kontrollere pilotens reelle anbefalinger og motstandstesten, og prøve Claude-demoen over HTTPS. PR-en forblir utkast frem til live-verifikasjon.
