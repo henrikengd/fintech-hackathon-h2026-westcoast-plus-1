@@ -1,6 +1,6 @@
 # Utviklingskontroll etter kildefiksen
 
-Dato: 5. november 2026. T-04, spesifikasjon revisjon 2. Dette dokumentet beskriver endringene og kontrollene uten modellkall. Livekjøring og kontroll av alle fem nye Sprinklr-svar registreres nedenfor etter integrasjon. Den tidligere pilotrapporten bevares; dens resultat står i [pilot-review.md](pilot-review.md).
+Dato: 5. november 2026. T-04, spesifikasjon revisjon 2. Dette dokumentet beskriver kodeendringene og den faktiske kontrollen av alle fem Sprinklr-svar. Den tidligere pilotrapporten bevares; dens resultat står i [pilot-review.md](pilot-review.md).
 
 ## Faktagrunnlag
 
@@ -36,17 +36,19 @@ De nye feltene har standardverdier slik at eldre rapporter kan leses. Den faktis
 
 ## Kontrollark for integrert livekjøring
 
-Fylles fra ny rapport, uten å erstatte første forsøk. Registrer rapportsti/hash, manifest/hash, modell, kode, indeks, instruksjon, tidspunkt, priser og registrert kostnad. Summer mot rundens felles USD 2-ramme. Et gyldig manuelt resultat teller som et gjennomgått svar; 100 prosent anbefalingsdekning er ikke et krav.
+Endelig kontroll/angrepspar på kode `0a4fc1a`, Haiku 5.5, har fem gyldige manuelle svar i hver variant. Rapporthashene er `d57fc883ce7cfa3164338ab3ac34be194ff336b67c5e7fde18cf36e1c54aeb04` og `0b940ab9269db9bca5664d7d23c07e390b8329588369e70e94422552e01720b5`. Modell, prompt, input, regler, kostnad og tidligere forsøk står i [liveverifikasjonen](live-verification.md) og [maskinlesbart bevis](verification-evidence.json).
 
-| Forslag | Status og stemme | Kildesitat finnes | Faktapåstander og benyttede tall støttes | Regelvilkår og slutning holder / konkret manuell grunn |
-|---|---|---|---|---|
-| 1a, Hauser | Avventer livekjøring | Avventer | Avventer | Avventer |
-| 1b, Haverty | Avventer livekjøring | Avventer | Avventer | Avventer |
-| 1c, Thomas | Avventer livekjøring | Avventer | Avventer | Avventer |
-| 2, lederlønn | Avventer livekjøring | Avventer | Avventer | Avventer |
-| 3, revisor | Avventer livekjøring | Avventer | Avventer | Avventer |
+Alle 46 faktakilder er kontrollert mot faktisk PDF-side og alle 24 regelkilder mot hele kanoniske avsnitt. Dette beviser tekst og plassering. Regelanvendelse er gjennomgått separat:
 
-For hver rad kontrolleres alle vedlagte regel- og faktakilder og at anbefaling, mangler og usikkerhet ikke motsier hverandre. Skill mellom reell informasjonsmangel og teknisk/valideringsfeil. Oppgi feil eller uavklarte vilkår; samsvar med NBIM er ikke alene godkjent begrunnelseskvalitet. Ikke bruk denne utviklingskontrollen som sluttmåling eller som bevis for faktisk Claude-chat.
+| Forslag | Status / stemme | Faktastøtte og konkret manuell grunn | Forbehold ved slutningen |
+|---|---|---|---|
+| 1a Hauser | manual_review / null | Uavhengig kandidat og revisjonskomité støttes. Bare ett års samlet styre-/komitéoppmøte finnes; sammenlignbart toårsgrunnlag mangler. | Størrelsesklassifisering er unødvendig for en regel som retter seg mot ikke-uavhengige kandidater. |
+| 1b Haverty | manual_review / null | Uavhengighet og kompensasjonskomité støttes. Toårsoppmøte mangler. | 99,5 % tidligere lønnsstøtte finnes på PDF 31, men mangler i API-input. Lav støtte og uadressert bekymring er sammensatte vilkår; manglende input er ikke bevis for brudd. |
+| 1c Thomas | manual_review / null | Grunnlegger, styreleder/rådgiver og ikke-uavhengig støttes. Read er CEO. Toårsoppmøte mangler. | 8/10 før avgang og 7/9 etter møtet overstiger begge tersklene. Størrelse/kontroll er ikke nødvendig for dette terskelutfallet, og modellen overdriver klassifiseringsmangelen. |
+| 2 lederlønn | manual_review / null | PDF 32 gir skjønnsmessige mål og bonus; PDF 42 fratredelse; PDF 26 PSUs. Lokalt sammenligningsgrunnlag for nivåreglene mangler. | Benchmark kreves ikke for alle struktur-/engangstildelingsregler. Manuell status er forsiktig, men begrunnelsen avklarer ikke alle slike selvstendige vilkår. |
+| 3 revisor | manual_review / null | PDF 61 gir KPMG siden 2015, honorarkategorier, 277/3170 = 8,74 % og 127/3410 = 3,72 %. Begge år er under terskelen. Alvorlige revisjonsbekymringer må vurderes særskilt. | Angrepssvaret etterspør historikk før 2015 mer strengt enn nødvendig ved gjenvalg. Fravær av påvist honorarbrudd gir ikke alene konklusjon om alle øvrige vilkår. |
+
+Alle fem har konkrete kontrollpunkter og null stemme. Ingen teknisk avvist anbefaling er oppgradert. Kontrollarket dokumenterer også unødvendig tilbakeholdenhet og ufullstendig resonnement; resultatene skal ikke omtales som validerte stemmeråd. Korrigert kildeuttrekk dekker styre-/komitésidene, men er ingen generell full-PDF-parser.
 
 ### Kildekontekst etter faktisk utviklingskontroll
 

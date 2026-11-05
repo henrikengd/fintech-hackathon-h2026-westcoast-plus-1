@@ -18,6 +18,10 @@ Revisjon 2 konkretiserer det gjenstående arbeidet etter den første livepiloten
 
 Avklarte valg fra [scope](scope.md) beholdes: case 1, NBIM, én komplett innkalling i Claude, FOR/MOT/AVSTÅ og separat manuell sjekk, lean oppsett og oppgitte API-kreditter på USD 204. Hele saldoen er ikke en verifisert kostnadsramme for neste kjøring. Første verifikasjonsrunde planlegges med samlet tak USD 2, inkludert omkjøringer og angrepspar. Gjeldende modellpriser kontrolleres ved kjøring. Claude-abonnementets chatbruk registreres separat dersom tilgjengelig.
 
+## Brukerens klientvalg under Deliver
+
+5. november 2026 ba brukeren uttrykkelig om å bruke ChatGPT i stedet da Claude-kontoen traff chatkvoten. F-05, chatdelen av F-07 og kontodelen av F-09 verifiseres derfor i brukerens ChatGPT med samme offentlige MCP-tjeneste og faste vurderingsinstruks. Dette endrer ikke API-modellen, datagrunnlaget eller øvrige krav. Claude-tilkoblingen ble prøvd, men den komplette Claude-PDF-vurderingen og angrepsparet ble ikke fullført. Testbevis skal navngi den faktiske klienten og modellen.
+
 ## Kilder og bekreftet utgangspunkt
 
 - [Pilotgjennomgangen](pilot-review.md) dokumenterer det faktiske modellresultatet og kildemanglene som denne revisjonen skal løse.
@@ -27,7 +31,7 @@ Avklarte valg fra [scope](scope.md) beholdes: case 1, NBIM, én komplett innkall
 - [Datatilgang](../../data-access.md), [evaluering](../../evaluation.md), [regelindeks](../../policy-index.md) og [leveransejournal](delivery.md) beskriver eksisterende kode og tidligere verifikasjon. Historiske statusavsnitt må leses med dato og revisjon.
 - Arrangørens lokale dokumenter er `Regler_og_bedommingskriterier.pdf`, `FinTech_Hackathon_Caser_H2026.pdf`, `FinTech Hackathon H2026.pdf` og `case1_stemmegivning/README.md`. De krever en femminutters demo, kravrespons på maksimalt én side, kjørbart repo eller zip og én kommando for hovedresultatet. Oppgitt frist er 6. november 2026 kl. 12.00. Metode og evaluering teller samlet 60 prosent.
 
-GitHubs standardgren ble kontrollert som `main` ved `a9bda4903c3f9ae03fab759e45b704503d462c28`. PR #10 er merget. #3 og #4 er lukket med tidligere installasjons-, kontrakt- og MCP-verifikasjon. Den senere livepiloten har fem stemmevalg, to anbefalinger, tre manuelle saker og status `partial`. Anthropic-nøkkelen virker. Faktisk Claude-tilkobling og historisk regelgyldighet er fortsatt uverifisert.
+Ved Prepare ble GitHubs standardgren kontrollert som `main` ved `a9bda4903c3f9ae03fab759e45b704503d462c28`. PR #10 er merget. #3 og #4 er lukket med tidligere installasjons-, kontrakt- og MCP-verifikasjon. Den senere livepiloten har fem stemmevalg, to anbefalinger, tre manuelle saker og status `partial`. Anthropic-nøkkelen virker. Faktisk Claude-tilkobling og historisk regelgyldighet er fortsatt uverifisert.
 
 ## Akseptansekrav
 
@@ -108,7 +112,7 @@ uv run --no-sync python -m voting_assistant evaluate --manifest <frosset-manifes
 uv run --no-sync python -m voting_assistant serve --host 127.0.0.1 --port 8000
 ```
 
-Den eksisterende `prepare_example.py` merker fortsatt Sprinklr som test. T-04 endrer den genererte utviklingspiloten slik at Sprinklr faktisk inngår når utvikling kjøres. Valget `--split development` alene endrer ikke dagens møteetiketter. T-01 eier det separate nye sluttmanifestet.
+Ved Prepare merket `prepare_example.py` fortsatt Sprinklr som test. T-04 endrer den genererte utviklingspiloten slik at Sprinklr faktisk inngår når utvikling kjøres. Valget `--split development` alene endrer ikke dagens møteetiketter. T-01 eier det separate nye sluttmanifestet.
 
 På Henriks maskin finnes uv under Codex-arbeidsmappens `work/deliver/runtime/bin/uv`, Python 3.12 og en eksisterende venv i det gamle integrasjonstreet. Disse lokale stiene er ikke et installasjonskrav for andre. `.env` og rådata er lokale. Overfør konfigurasjon sikkert til ny kjøremappe ved Deliver uten å skrive hemmeligheter til logger. Den eksisterende pilotens manglende sider og retningslinjevilkår skal dekkes av relevante regresjoner gjennom dagens vurderingsgrensesnitt. Nettverksfrie tester er separate fra faktisk modell- og chatverifikasjon.
 

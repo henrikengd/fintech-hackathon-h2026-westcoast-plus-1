@@ -1,19 +1,13 @@
-# Stemmegivningsassistent: status og videre arbeid
+# Stemmegivningsassistent: status
 
-Oppdatert 5. november 2026 etter livepiloten. [Spesifikasjon revisjon 2](spec.md) er gjeldende plan. [Pilotgjennomgangen](pilot-review.md) skiller faktiske modellresultater fra tidligere programtester. [Leveransejournalen](delivery.md) bevarer historikken.
+Oppdatert 5. november 2026 ved brukerens beskjed om å stoppe itereringen og pushe alt. PR #10 er merget. Den nye leveransen ligger på `codex/claude-voting-verification` og publiseres som umerget PR-utkast.
 
-PR #10 er merget. Prosjekt/kontrakter og regelindeks/MCP er levert gjennom #3 og #4. Anthropic-nøkkelen virker. Siste pilotforsøk har fem stemmevalg, to anbefalinger, tre manuelle saker og status partial. MOT-presisjon og recall er 1/1 med 40 prosent anbefalingsdekning. Dette er en teknisk pilot med foreløpig historisk regelavgrensning.
+Kildehåndtering, faktagrunnlag, bevaring av manuelle begrunnelser, forsøkshistorikk og tre nye frosne testmøter er implementert. 62 tester passerer, og en ren installasjon gjenskapte indeks og datamanifester. Uavhengig kodegjennomgang fant ingen gjenværende kodefunn på `0a4fc1a`.
 
-## Neste arbeid
+Første sluttmåling fullførte to av tre møter: 14 gyldige manuelle vurderinger, syv tekniske feil og ingen anbefalinger. Et uendret gjenopptak fullførte alle tre: to FOR-anbefalinger og 19 manuelle vurderinger, 9,52 % dekning og MOT-recall 0/1. Første resultat er bevart og er fortsatt hovedmålingen. Samlet API-forbruk i denne runden er USD 0,1732962.
 
-| Oppgave | Neste leveranse | Status ved Prepare |
-|---|---|---|
-| [#2](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/2) | Nye senere møter, kildekoblinger og historiske regler | Klar til dataarbeid |
-| [#5](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/5) | Rett kildene og håndgå Sprinklr-piloten | Klar til implementering ved Deliver |
-| [#6](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/6) | Faktisk Claude-demo og chatens motstandstest | Trenger lagets Claude-konto |
-| [#7](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/7) | Frossen API-evaluering og motstandstest | Venter på #2 og #5 |
-| [#8](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/8) | Ren reproduksjon og innleveringspakke | Venter på #6 og #7 |
+ChatGPT-pluginen er installert etter brukerens valg. Full PDF, kontroll-/angrepspar og utilgjengelig server er prøvd. Angrepet endret ikke stemmene, men chatten hadde kilde- og ID-feil. Claude nådde chatkvoten før full test. Ingen API-sitatvalidator er koblet til chatten.
 
-CCC og Sprinklr brukes videre til utvikling. Nytt holdout fryses før sluttkjøring. NBIM-API er valgfritt når referansen kan avstemmes offentlig. N-PX-filen holdes utenfor hovedmålingen. Ingen ny database eller modellbenchmark er planlagt.
+[Liveverifikasjon](live-verification.md), [utviklingskontroll](development-check.md) og [maskinlesbare bevis](verification-evidence.json) viser kilder, kostnader og begrensninger. [Spesifikasjonen](spec.md) beholder kravene og registrerer brukerens bytte til ChatGPT.
 
-Bruk [hovedissue #1](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/1) eller `$deliver` for gjennomføring. [Prosjekt 3](https://github.com/users/henrikengd/projects/3) gjenbrukes. Prepare endrer dokumentasjon og oppgaveplan, ikke applikasjonskode.
+#2 er lukket etter kildeverifikasjon. #3 og #4 er tidligere lukket. #5, #6, #7 og #8 står åpne ved dette stoppunktet; implementering og mye verifikasjon er gjort, men endelig dokumentasjonskontroll, ticketavstemming, tidsmålt samlet demo og siste gjenopprettingstest er ikke fullført. Hovedissue #1 forblir åpen. Ingen merge eller innsending er utført.

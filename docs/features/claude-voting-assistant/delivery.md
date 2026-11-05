@@ -1,36 +1,32 @@
 # Leveransejournal
 
-## Aktiv leveranse, revisjon 2
+## Gjeldende stoppunkt, revisjon 2
 
-Startet 5. november 2026 etter brukerens `$deliver`. Godkjent kravgrunnlag er [spesifikasjon revisjon 2](spec.md), hovedissue #1. Fjernstandardgrenen er `main` ved `fb704fb17e907350f41ccc522e2a2dd613c1f108`; ingen åpen feature-PR ved oppstart. PR #10 er merget. De gamle arbeidstrærne og lokal konfigurasjon er bevart.
+Brukeren ba 5. november 2026: «stopp itereringen nå og push alt». Dette overstyrer videre iterering i Deliver. Arbeidet publiseres som umerget PR-utkast med synlige gjenstående krav. Ingen nye modellkall eller forbedringer gjøres etter beskjeden.
 
-Integrasjonsgren er `codex/claude-voting-verification`. Arbeidstrærne ligger under `/Users/henrik.noteless/.codex/worktrees/`, hver med repoets navn som undermappe. Bare koordinatoren integrerer og oppdaterer denne journalen.
+Repo: `henrikengd/fintech-hackathon-h2026-westcoast-plus-1`. Base `main` ved `fb704fb17e907350f41ccc522e2a2dd613c1f108`. Integrasjonsgren `codex/claude-voting-verification`, worktree `voting-verification` under `.codex/worktrees/`, med repoets navn som undermappe. Kjørbar kode ved `0a4fc1ab3629000e01eddb0cb46daea57f309e84`; senere endringer er dokumentasjon. Den tidligere PR #10 er merget.
 
-| Oppgave | Arbeider | Worktree-navn / gren | Tildelt base | Status |
-|---|---|---|---|---|
-| T-01 / #2 | `/root/verification_data` | `voting-data` / `codex/claude-voting-verification-t01` | `fb704fb` | Pågår: nye møter og historiske kilder |
-| T-04 / #5 | `/root/verification_assessment` | `voting-assessment` / `codex/claude-voting-verification-t04` | `fb704fb` | `0caf54e` integrert som `f8a5984`; 45 tester passerte. Første liveforsøk krevde større svarramme. |
-| T-05 / #6 | `/root/verification_demo`, koordinator for faktisk chat | `voting-demo` / `codex/claude-voting-verification-t05` | `fb704fb` | `333b04e` og `2a4e42c` integrert som `6cdbd97` og `f8413ed`. Faktisk PDF-chat kjører. |
-| T-06 / #7 | `/root/verification_assessment` | `voting-evaluation` / `codex/claude-voting-verification-t06` | `f8a5984` | Historikk, rapportering og API-angrepspar forberedes. Sluttkjøring venter på integrert #2 og verifisert #5. |
-| T-07 / #8 | Koordinator | `voting-verification` / integrasjonsgren | `fb704fb` | Venter på #6 og #7 |
+| Oppgave | Arbeider/arbeidstre | Integrerte commits og verifikasjon | Tracker ved stopp |
+|---|---|---|---|
+| #2 datagrunnlag | verification_data / voting-data | b36cdcf → 66534bd, tre fryste møter og historiske arkivkilder kontrollert | Lukket |
+| #5 vurdering | verification_assessment / voting-assessment | 0caf54e → f8a5984; kildekontekst 32640da/0a4fc1a; alle fem faktiske svar gjennomgått | Åpen, bevis lagret |
+| #6 chatdemo | verification_demo / voting-demo og koordinator | 333b04e → 6cdbd97, 2a4e42c → f8413ed; faktisk ChatGPT-kontroll/angrep og serverfeil | Åpen, siste gjenoppretting ikke chattestet |
+| #7 evaluering | verification_assessment / voting-evaluation | a6deec8 → 504f485; rapporter, alle forsøk og kildekontroller lagret | Åpen, sluttavstemming gjenstår |
+| #8 levering | koordinator | Ren installasjon og dokumentasjon; 62 tester passerer | Åpen, samlet tidsmålt demo og sluttkontroll gjenstår |
 
-Felles skrivetilgang er fordelt etter spesifikasjonen. T-04 eier `assessment.py`, `contracts.py` og `prepare_example.py`. T-01 eier nye data-/policyfiler og ny klargjøring. T-05 eier demooppsett og nødvendig serverarbeid. Alle betalte API-kall utføres av koordinatoren etter integrasjon, innen samlet USD 2. Rundens lokale kostnadsjournal ligger i Codex-arbeidsmappens `work/deliver-r2/budget.json`. Ved oppstart var ingen modellkall gjort; oppdatert status følger nedenfor.
+T-04/T-05-arbeidet med svarramme og deduplisering er integrert gjennom 02eb8cb og 1536221. De bruker eksisterende kontrakter og bevarer alle kildebytes og tilordninger. Ingen ny database eller modellbenchmark er innført. Gamle arbeidstrær, nøkler og rådata er bevart og ikke publisert.
 
-### Verifisert grunnlag
+[Liveverifikasjonen](live-verification.md) er gjeldende resultatjournal. Første holdout er partial, siste uendrede gjenopptak er complete. To anbefalinger og 19 gyldige manuelle svar i siste rapport skal ikke erstatte første måling. Samlet API-kostnad USD 0,1732962 av USD 2. Chatbruk er separat.
 
-Låst installasjon på Python 3.12.12 fra eksisterende uv-cache passerte. Alle 37 eksisterende tester passerte på `fb704fb`. Første installasjonsforsøk pekte på standardcache og manglet uvicorn offline; riktig isolert cache løste dette uten endring av avhengigheter. Kode for #3 og #4 er integrert fra tidligere PR. Deres tidligere lokale MCP-verifikasjon står i den historiske journalen under.
+Brukeren valgte ChatGPT da Claude-kvoten ble brukt opp. Pluginen er installert og faktisk prøvd. MCP-server og midlertidig tunnel er beholdt for brukerens test. De krever at prosessene og maskinen kjører; ingen permanent hosting er levert. Serveren ble startet igjen etter den siste feiltesten uten et nytt modellkall.
 
-Claude-fanen viste først innlogging. Brukeren opplyste deretter at kontoen er innlogget og at den er separat fra kontoen med API-kreditter. API-nøkkelen er kopiert direkte til lokal ignorert `.env` i integrasjonsmappen med filmodus 0600. Ingen nøkkel er skrevet til journal eller logger. Faktisk connector-test gjenstår.
+## Gjennomgang og reproduksjon
 
-Neste steg er å verifisere Claude-tilgangen, integrere arbeidercommits etter gjennomgang og kjøre utviklingspiloten før ny sluttmåling. Uavhengig full gjennomgang samt separate Spec- og Standards-gjennomganger gjenstår. Ingen ny PR er opprettet.
+`verification_full_review` gjennomgikk hele kodeendringen fra fb704fb og rettingen til 0a4fc1a, uten gjenværende kodefunn. `verification_standards_review` fant ingen standardavvik, inkludert endringene til 0a4fc1a. Den separate Spec-gjennomgangen identifiserte de synlige leveransegapene; den var betinget, ikke full sluttgodkjenning. Ingen av reviewerene implementerte koden de vurderte.
 
-### Integrert verifikasjon under arbeid
+Uavhengig ren kopi av 0a4fc1a med gjeldende README installerte Python 3.12.12 og låste avhengigheter, lastet ned offentlige PDF-er og gjenskapte indeks og begge manifester med identiske hasher. CLI-hjelp og alle 62 tester passerte. Ingen nøkler eller betalte modellkall ble brukt i denne reproduksjonen.
 
-5. november 2026, første utviklingsforsøk på `6cdbd97`: manifest `f16dcdeec535b6ab844369e1f4b40d5e3065871ee86130193948e27363b63a65`, Haiku 5.5, input USD 0,10 og output USD 0,50 per million tokens. Pris og maksimalt 128k output kontrollert i [modelloversikten](https://platform.claude.com/docs/en/models/haiku-5-5/overview). Rapport `data/raw/development-r2/first-run.json` bevares. Registrert kostnad USD 0,0211955. CCC ga tre gyldige manuelle svar; Sprinklr ble `partial` med fem manuelle svar fordi modellen nådde 10 000 output-tokens. Ingen ufullstendige anbefalinger ble godkjent. T-05-arbeideren retter den avgrensede svarrammen i en egen liten commit før nytt utviklingsforsøk og før holdout.
-
-Innlogging er faktisk kontrollert i Claude. Kontoen er Free og støtter egen connector. En midlertidig HTTPS-tunnel eksponerer bare den offentlige regelindeksen via lokal port 8002. Connectoren er lagt til og aktiv; ekte `search_guidelines` og `get_guideline`-kall er observert. Kontroll-PDF med alle 70 originalsider og blank side 71 er lastet opp med den faste instruksen. Svaret og kildekontrollen er ennå ikke ferdige. Ingen API-nøkkel er sendt til chatten.
-
-Kontroll-/angreps-PDFene har identiske originalsidebilder ved Poppler 72 dpi, samme metadata og kun angrepstekst på den ekstra siden. Arbeiderens lokale PDF-verifikasjon er kontrollert; dette er ikke i seg selv en bestått modelltest.
+Endelig dokumentasjon, tidsmålt samlet femminutters demo, siste gjenoppretting i ny chat og ticket-/prosjektavstemming gjenstår. PR og CI-status må leses på GitHub for publisert commit. Hovedissue #1 forblir åpen; ingen merge eller innsending er utført.
 
 ## Historisk leveranse, revisjon 1
 
