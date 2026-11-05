@@ -1,5 +1,35 @@
 # Leveransejournal
 
+## Gjeldende stoppunkt, revisjon 2
+
+Brukeren ba 5. november 2026: «stopp itereringen nå og push alt». Dette overstyrer videre iterering i Deliver. Arbeidet publiseres som umerget PR-utkast med synlige gjenstående krav. Ingen nye modellkall eller forbedringer gjøres etter beskjeden.
+
+Repo: `henrikengd/fintech-hackathon-h2026-westcoast-plus-1`. Base `main` ved `fb704fb17e907350f41ccc522e2a2dd613c1f108`. Integrasjonsgren `codex/claude-voting-verification`, worktree `voting-verification` under `.codex/worktrees/`, med repoets navn som undermappe. Kjørbar kode ved `0a4fc1ab3629000e01eddb0cb46daea57f309e84`; senere endringer er dokumentasjon. Den tidligere PR #10 er merget.
+
+| Oppgave | Arbeider/arbeidstre | Integrerte commits og verifikasjon | Tracker ved stopp |
+|---|---|---|---|
+| #2 datagrunnlag | verification_data / voting-data | b36cdcf → 66534bd, tre fryste møter og historiske arkivkilder kontrollert | Lukket |
+| #5 vurdering | verification_assessment / voting-assessment | 0caf54e → f8a5984; kildekontekst 32640da/0a4fc1a; alle fem faktiske svar gjennomgått | Åpen, bevis lagret |
+| #6 chatdemo | verification_demo / voting-demo og koordinator | 333b04e → 6cdbd97, 2a4e42c → f8413ed; faktisk ChatGPT-kontroll/angrep og serverfeil | Åpen, siste gjenoppretting ikke chattestet |
+| #7 evaluering | verification_assessment / voting-evaluation | a6deec8 → 504f485; rapporter, alle forsøk og kildekontroller lagret | Åpen, sluttavstemming gjenstår |
+| #8 levering | koordinator | Ren installasjon og dokumentasjon; 62 tester passerer | Åpen, samlet tidsmålt demo og sluttkontroll gjenstår |
+
+T-04/T-05-arbeidet med svarramme og deduplisering er integrert gjennom 02eb8cb og 1536221. De bruker eksisterende kontrakter og bevarer alle kildebytes og tilordninger. Ingen ny database eller modellbenchmark er innført. Gamle arbeidstrær, nøkler og rådata er bevart og ikke publisert.
+
+[Liveverifikasjonen](live-verification.md) er gjeldende resultatjournal. Første holdout er partial, siste uendrede gjenopptak er complete. To anbefalinger og 19 gyldige manuelle svar i siste rapport skal ikke erstatte første måling. Samlet API-kostnad USD 0,1732962 av USD 2. Chatbruk er separat.
+
+Brukeren valgte ChatGPT da Claude-kvoten ble brukt opp. Pluginen er installert og faktisk prøvd. MCP-server og midlertidig tunnel er beholdt for brukerens test. De krever at prosessene og maskinen kjører; ingen permanent hosting er levert. Serveren ble startet igjen etter den siste feiltesten uten et nytt modellkall.
+
+## Gjennomgang og reproduksjon
+
+`verification_full_review` gjennomgikk hele kodeendringen fra fb704fb og rettingen til 0a4fc1a, uten gjenværende kodefunn. `verification_standards_review` fant ingen standardavvik, inkludert endringene til 0a4fc1a. Den separate Spec-gjennomgangen identifiserte de synlige leveransegapene; den var betinget, ikke full sluttgodkjenning. Ingen av reviewerene implementerte koden de vurderte.
+
+Uavhengig ren kopi av 0a4fc1a med gjeldende README installerte Python 3.12.12 og låste avhengigheter, lastet ned offentlige PDF-er og gjenskapte indeks og begge manifester med identiske hasher. CLI-hjelp og alle 62 tester passerte. Ingen nøkler eller betalte modellkall ble brukt i denne reproduksjonen.
+
+Endelig dokumentasjon, tidsmålt samlet femminutters demo, siste gjenoppretting i ny chat og ticket-/prosjektavstemming gjenstår. PR og CI-status må leses på GitHub for publisert commit. Hovedissue #1 forblir åpen; ingen merge eller innsending er utført.
+
+## Historisk leveranse, revisjon 1
+
 > Status 5. november etter livepilot og Prepare revisjon 2: PR #10 er merget. Anthropic-tilgang er prøvd, med fem stemmevalg, to anbefalinger og tre manuelle saker i siste forsøk. Se [pilotgjennomgangen](pilot-review.md) og [gjeldende spesifikasjon](spec.md). Avsnittene under beskriver den tidligere leveransen og erstattes ikke som historisk bevis. Ny implementering er ikke startet av Prepare.
 
 Spesifikasjon revisjon 1. Hovedoppgave [#1](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/1). Basen er `main` ved `299e422b3d98d08a967669c2cc5e3175009d5007`. Integrasjonsgren er `codex/claude-voting-assistant`.

@@ -75,6 +75,14 @@ class Guideline(Contract):
         )
 
 
+class UnverifiedExplanation(Contract):
+    """Original model text retained for a human, never a validated recommendation."""
+
+    rationale: NonEmpty
+    missing_information: list[NonEmpty]
+    uncertainty_reason: NonEmpty | None
+
+
 class Assessment(Contract):
     proposal_id: NonEmpty
     status: Literal["assessed", "manual_review"]
@@ -84,6 +92,8 @@ class Assessment(Contract):
     factual_sources: list[Source]
     missing_information: list[NonEmpty]
     uncertainty_reason: NonEmpty | None
+    validation_errors: list[NonEmpty] = Field(default_factory=list)
+    unverified_explanation: UnverifiedExplanation | None = None
 
     @model_validator(mode="after")
     def check_status(self) -> Self:
@@ -92,6 +102,8 @@ class Assessment(Contract):
                 raise ValueError("manual review requires a null recommendation and a reason")
         elif self.recommendation is None or not self.policy_sources or not self.factual_sources:
             raise ValueError("assessment requires a recommendation, policy sources and factual sources")
+        elif self.validation_errors or self.unverified_explanation is not None:
+            raise ValueError("a failed validation cannot be an assessed recommendation")
         return self
 
 

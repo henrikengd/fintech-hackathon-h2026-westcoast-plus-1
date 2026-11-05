@@ -1,16 +1,23 @@
 from datetime import date
 from decimal import Decimal
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from pydantic import BaseModel, Field
 
 from voting_assistant.cli import CliError
 from voting_assistant.contracts import Agenda, Assessment, MeetingReference, Proposal, Source, Vote
-from voting_assistant.evaluation import Manifest, Meeting, load_manifest, run_evaluation, summarize
+from voting_assistant.evaluation import Manifest, Meeting, _code_fingerprint, load_manifest, run_evaluation, summarize
+
+ATTACK_SCRIPT = Path(__file__).resolve().parents[1] / "scripts/prepare_api_attack.py"
+ATTACK_SPEC = importlib.util.spec_from_file_location("prepare_api_attack", ATTACK_SCRIPT)
+prepare_api_attack = importlib.util.module_from_spec(ATTACK_SPEC)
+ATTACK_SPEC.loader.exec_module(prepare_api_attack)
 
 
 class StubRun(BaseModel):
@@ -99,6 +106,10 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(report["manual_review"], 1)
         self.assertEqual(report["missing_output"], 2)
         self.assertEqual(report["missing_reference"], 1)
+        self.assertEqual(report["valid_manual_review"], 1)
+        self.assertEqual(report["exclusions"], [{
+            "meeting_id": "first", "proposal_id": "p4", "reason": "reference_vote_unavailable",
+        }])
         self.assertEqual(report["recommendation_coverage"], 0.25)
         self.assertEqual(report["model"], {
             "tp": 0, "fp": 1, "tn": 0, "fn": 2,
@@ -157,6 +168,10 @@ class EvaluationTests(unittest.TestCase):
             self.assertIsInstance(agenda, Agenda)
             self.assertNotIn("vote_semantics", agenda.model_dump())
             calls.append((agenda.meeting_id, remaining))
+            attempt = json.loads(self.output.read_text())["attempts"][agenda.meeting_id][-1]
+            self.assertEqual(attempt["status"], "running")
+            self.assertIsNotNone(attempt["started_at"])
+            self.assertEqual(attempt["cost_usd"], "0")
             reserve(Decimal("0.10"))
             if agenda.meeting_id == "second":
                 self.assertEqual(json.loads(self.output.read_text())["spent_usd"], "0.12")
@@ -186,6 +201,133 @@ class EvaluationTests(unittest.TestCase):
         ])
         self.assertEqual(report["spent_usd"], "0.14")
         self.assertEqual(report["metrics"]["status"], "complete")
+        self.assertEqual(len(report["attempts"]["first"]), 1)
+        interrupted_attempt, completed_attempt = report["attempts"]["second"]
+        self.assertEqual(interrupted_attempt["status"], "interrupted")
+        self.assertEqual(interrupted_attempt["cost_usd"], "0.10")
+        self.assertIsNone(interrupted_attempt["run"])
+        self.assertIn("interruption_detected_at", interrupted_attempt)
+        self.assertEqual(completed_attempt["reason"], "resume_incomplete_attempt")
+        self.assertEqual(completed_attempt["cost_usd"], "0.02")
+        self.assertEqual(completed_attempt["run"], report["runs"]["second"])
+
+    def test_resume_preserves_first_partial_result_and_its_error(self):
+        def partial(agenda, remaining, reserve):
+            run = self.complete_run(agenda)
+            run.status = "partial"
+            run.errors = ["First attempt failed source validation"]
+            return run
+
+        arguments = dict(
+            manifest=self.manifest, meetings=[self.meeting], manifest_sha256="a" * 64,
+            output=self.output, max_cost_usd=Decimal("1"), config={"model": "stub"},
+        )
+        first = run_evaluation(assessor=partial, **arguments)
+        first_run = first["runs"]["first"]
+        resumed = run_evaluation(
+            assessor=lambda agenda, remaining, reserve: self.complete_run(agenda), resume=True, **arguments,
+        )
+        history = resumed["attempts"]["first"]
+        self.assertEqual([attempt["number"] for attempt in history], [1, 2])
+        self.assertEqual(history[0]["run"], first_run)
+        self.assertEqual(history[1]["previous_errors"], first_run["errors"])
+        self.assertEqual(resumed["spent_usd"], "0.04")
+        self.assertEqual(sum(Decimal(item["cost_usd"]) for item in history), Decimal("0.04"))
+        self.assertTrue(all(item["finished_at"] for item in history))
+
+    def test_legacy_checkpoint_is_readable_but_not_silently_migrated_for_resume(self):
+        arguments = dict(
+            manifest=self.manifest, meetings=[self.meeting], manifest_sha256="a" * 64,
+            output=self.output, max_cost_usd=Decimal("1"), config={},
+        )
+        report = run_evaluation(assessor=lambda agenda, remaining, reserve: self.complete_run(agenda), **arguments)
+        report["configuration"]["checkpoint_version"] = 1
+        report["configuration"].pop("code_sha256")
+        report.pop("attempts")
+        for result in report["runs"]["first"]["assessments"]:
+            result.pop("validation_errors")
+            result.pop("unverified_explanation")
+        self.output.write_text(json.dumps(report))
+        before = self.output.read_bytes()
+        self.assertEqual(summarize([self.meeting], report["runs"])["proposals"], 4)
+        with self.assertRaisesRegex(CliError, "configuration differs"):
+            run_evaluation(assessor=lambda *args: self.fail("must not call a model"), resume=True, **arguments)
+        self.assertEqual(self.output.read_bytes(), before)
+
+    def test_runtime_fingerprint_tracks_code_and_lock_not_documentation(self):
+        package = self.directory / "src/voting_assistant"
+        package.mkdir(parents=True)
+        runtime = package / "evaluation.py"
+        runtime.write_text("first implementation")
+        (self.directory / "uv.lock").write_text("locked dependency")
+        with patch("voting_assistant.evaluation.__file__", str(runtime)):
+            original = _code_fingerprint()
+            (self.directory / "README.md").write_text("documentation change")
+            self.assertEqual(_code_fingerprint(), original)
+            runtime.write_text("changed implementation")
+            self.assertNotEqual(_code_fingerprint(), original)
+            runtime.write_text("first implementation")
+            (self.directory / "uv.lock").write_text("changed dependency")
+            self.assertNotEqual(_code_fingerprint(), original)
+
+    def test_manual_validation_errors_and_old_unclassified_results_are_separate(self):
+        valid_manual = self.result("p1", None).model_dump(mode="json")
+        invalid_manual = self.result("p2", None).model_dump(mode="json")
+        invalid_manual["validation_errors"] = ["Fact quote does not exist"]
+        legacy_manual = self.result("p3", None).model_dump(mode="json")
+        legacy_manual.pop("validation_errors")
+        report = summarize([self.meeting], {"first": {
+            "status": "partial", "errors": ["Citation validation failed"],
+            "assessments": [valid_manual, invalid_manual, legacy_manual],
+        }})
+        self.assertEqual(report["manual_review"], 3)
+        self.assertEqual(report["valid_manual_review"], 1)
+        self.assertEqual(report["validation_failed_manual_review"], 1)
+        self.assertEqual(report["unclassified_manual_review"], 1)
+        self.assertEqual(report["validation_error_rows"][0]["proposal_id"], "p2")
+        self.assertEqual(report["incomplete_meetings"], 1)
+        self.assertEqual(report["model"]["fn"], 2)
+
+    def test_complete_label_cannot_override_row_or_meeting_errors(self):
+        for failure in ("row", "meeting"):
+            results = [self.result(p.proposal_id, None).model_dump(mode="json") for p in self.meeting.agenda.proposals]
+            errors = []
+            if failure == "row":
+                results[0]["validation_errors"] = ["Failed validation"]
+            else:
+                errors = ["Tool failure"]
+            report = summarize([self.meeting], {"first": {
+                "status": "complete", "assessments": results, "errors": errors,
+            }})
+            self.assertEqual(report["status"], "partial")
+
+    def test_attack_pair_changes_one_quote_and_keeps_references_and_policy_equal(self):
+        self.meeting = self.meeting_for("first", date(2025, 1, 2), "development")
+        self.meeting.agenda.proposals[0].sources[0].quote = "The original source fact."
+        path = self.write_manifest([self.meeting])
+        directory = self.directory / "pair"
+        prepare_api_attack.prepare_pair(path, directory, "first")
+        original_manifest, originals, _ = load_manifest(directory / "original-manifest.json")
+        attack_manifest, attacks, _ = load_manifest(directory / "attack-manifest.json")
+        original = originals[0].agenda.model_dump(mode="json")
+        attack = attacks[0].agenda.model_dump(mode="json")
+        changed = attack["proposals"][0]["sources"][0]
+        self.assertEqual(changed["quote"], "The original source fact." + prepare_api_attack.INSTRUCTION)
+        changed["quote"] = original["proposals"][0]["sources"][0]["quote"]
+        self.assertEqual(attack, original)
+        self.assertEqual(originals[0].reference, attacks[0].reference)
+        self.assertEqual(original_manifest.policy_documents, attack_manifest.policy_documents)
+        note = json.loads((directory / "pair.json").read_text())
+        self.assertIn("synthetic overlay", note["source_provenance_note"])
+        self.assertEqual(note["changed_json_pointer"], "/proposals/0/sources/0/quote")
+        self.assertNotIn("vote_semantics", json.dumps(original))
+        with self.assertRaises(FileExistsError):
+            prepare_api_attack.prepare_pair(path, directory, "first")
+
+    def test_attack_pair_rejects_holdout_meeting(self):
+        path = self.write_manifest([self.meeting])
+        with self.assertRaisesRegex(CliError, "development meeting"):
+            prepare_api_attack.prepare_pair(path, self.directory / "pair", "first")
 
     def test_skipped_and_failed_meetings_keep_all_proposal_ids(self):
         def fail(agenda, remaining, reserve):

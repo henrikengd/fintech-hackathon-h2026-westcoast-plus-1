@@ -1,4 +1,4 @@
-"""Prepare the checked public pilot meetings from a pinned issuer PDF."""
+"""Prepare the two development meetings from a pinned issuer PDF."""
 from argparse import ArgumentParser
 from hashlib import sha256
 import json
@@ -11,12 +11,13 @@ PROXY_URL = (
     "content/0001140361-25-017121/0001140361-25-017121.pdf"
 )
 PROXY_SHA256 = "23dc506b308b7a76276d1945a4c61449d261d7e4066ba49f8247c5b2eb35e170"
+DIRECTOR_PAGES = (2, 13, 14, 15, 16, 17, 18, 19, 20)
 SPRINKLR_PROPOSALS = (
-    ("1a", "Elect Jan R. Hauser", "director_election", (2, 13, 14, 15)),
-    ("1b", "Elect Kevin Haverty", "director_election", (2, 13, 14, 15)),
-    ("1c", "Elect Ragy Thomas", "director_election", (2, 13, 14, 15)),
+    ("1a", "Elect Jan R. Hauser", "director_election", DIRECTOR_PAGES),
+    ("1b", "Elect Kevin Haverty", "director_election", DIRECTOR_PAGES),
+    ("1c", "Elect Ragy Thomas", "director_election", DIRECTOR_PAGES),
     ("2", "Advisory vote on executive compensation", "say_on_pay", (2, 23, 26, 27, 28, 32, 40, 42)),
-    ("3", "Ratify KPMG LLP as auditor", "auditor_ratification", (2, 61)),
+    ("3", "Ratify KPMG LLP as auditor", "auditor_ratification", (2, 18, 19, 61)),
 )
 
 
@@ -27,6 +28,8 @@ def write_json(directory: Path, name: str, value: object) -> dict[str, str]:
 
 
 def prepare(proxy: Path, directory: Path, split: str) -> None:
+    if split != "development":
+        raise ValueError("CCC and Sprinklr are development meetings, not a holdout test")
     raw = proxy.read_bytes()
     if sha256(raw).hexdigest() != PROXY_SHA256:
         raise ValueError("Sprinklr proxy PDF checksum differs from the verified edition")
@@ -70,7 +73,7 @@ def prepare(proxy: Path, directory: Path, split: str) -> None:
         ("ccc-2025-05-22", "development", json.loads(
             (ROOT / "data/meetings/ccc-2025-05-22.json").read_text(encoding="utf-8")
         )),
-        ("sprinklr-2025-06-12", "test", agenda),
+        ("sprinklr-2025-06-12", "development", agenda),
     ):
         ref = json.loads((ROOT / f"data/reference/{key}.json").read_text(encoding="utf-8"))
         meetings.append({
@@ -90,7 +93,7 @@ def main() -> None:
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("--sprinklr-proxy", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, default=Path("data/raw/pilot"))
-    parser.add_argument("--split", choices=("development", "test"), default="test")
+    parser.add_argument("--split", choices=("development",), default="development")
     args = parser.parse_args()
     try:
         prepare(args.sprinklr_proxy, args.output_dir, args.split)

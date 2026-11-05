@@ -5,6 +5,7 @@ from collections import Counter
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 import fcntl
 import hashlib
@@ -161,6 +162,8 @@ def _complete(run: dict, agenda: Agenda) -> bool:
     expected = [proposal.proposal_id for proposal in agenda.proposals]
     return (
         run.get("status") == "complete"
+        and not run.get("errors")
+        and not any(item.validation_errors for item in actual.values())
         and list(actual) == expected
         and len(run.get("assessments", [])) == len(expected)
     )
@@ -172,6 +175,10 @@ def summarize(meetings: list[Meeting], runs: dict[str, dict]) -> dict:
     counts = dict.fromkeys(("assessed", "manual_review", "missing_output", "missing_reference"), 0)
     types: Counter[str] = Counter()
     semantics: Counter[str] = Counter()
+    manual_counts = dict.fromkeys(("valid_manual_review", "validation_failed_manual_review", "unclassified_manual_review"), 0)
+    validation_error_rows = []
+    exclusions = []
+    meeting_errors = []
     complete = 0
     for meeting in meetings:
         agenda = meeting.agenda
@@ -179,14 +186,36 @@ def summarize(meetings: list[Meeting], runs: dict[str, dict]) -> dict:
         run = runs.get(agenda.meeting_id, {})
         complete += _complete(run, agenda)
         results = _assessments(run, agenda)
+        raw_rows = run.get("assessments", [])
+        raw_results = {
+            item.get("proposal_id"): item for item in raw_rows if isinstance(item, dict)
+        } if isinstance(raw_rows, list) else {}
+        if run.get("errors"):
+            meeting_errors.append({"meeting_id": agenda.meeting_id, "errors": run["errors"]})
         refs = {vote.proposal_id: vote for vote in meeting.reference.votes}
         for proposal in agenda.proposals:
             types[proposal.proposal_type or "unknown"] += 1
             assessment = results.get(proposal.proposal_id)
             counts[assessment.status if assessment else "missing_output"] += 1
+            if assessment and assessment.status == "manual_review":
+                if assessment.validation_errors:
+                    manual_counts["validation_failed_manual_review"] += 1
+                    validation_error_rows.append({
+                        "meeting_id": agenda.meeting_id, "proposal_id": proposal.proposal_id,
+                        "errors": assessment.validation_errors,
+                    })
+                elif "validation_errors" not in raw_results[proposal.proposal_id] and run.get("errors"):
+                    # Old reports do not distinguish row-level failures from genuine missing facts.
+                    manual_counts["unclassified_manual_review"] += 1
+                else:
+                    manual_counts["valid_manual_review"] += 1
             ref = refs[proposal.proposal_id]
             if ref.vote is None:
                 counts["missing_reference"] += 1
+                exclusions.append({
+                    "meeting_id": agenda.meeting_id, "proposal_id": proposal.proposal_id,
+                    "reason": "reference_vote_unavailable",
+                })
                 continue
             model_pairs.append((ref.vote, assessment.recommendation if assessment else None))
             board_pairs.append((ref.vote, ref.board_recommendation))
@@ -198,6 +227,7 @@ def summarize(meetings: list[Meeting], runs: dict[str, dict]) -> dict:
         "status": "complete" if meetings and complete == len(meetings) else "partial",
         "meetings": len(meetings),
         "complete_meetings": complete,
+        "incomplete_meetings": len(meetings) - complete,
         "date_from": dated[0] if dated else None,
         "date_to": dated[-1] if dated else None,
         "proposals": num_proposals,
@@ -207,6 +237,10 @@ def summarize(meetings: list[Meeting], runs: dict[str, dict]) -> dict:
             ["Reference export semantics are unverified."] if semantics.get("unverified") else []
         ),
         **counts,
+        **manual_counts,
+        "validation_error_rows": validation_error_rows,
+        "meeting_errors": meeting_errors,
+        "exclusions": exclusions,
         "recommendation_coverage": _ratio(counts["assessed"], num_proposals),
         "model": _metrics(model_pairs),
         "baseline": {
@@ -260,7 +294,7 @@ def _load_run(output: Path, config: dict, resume: bool) -> dict:
     if not output.exists():
         if resume:
             raise CliError("no previous output to resume")
-        return {"configuration": config, "spent_usd": "0", "runs": {}}
+        return {"configuration": config, "spent_usd": "0", "runs": {}, "attempts": {}}
     if not resume:
         raise CliError("output exists; choose a new output or use --resume")
     try:
@@ -270,9 +304,23 @@ def _load_run(output: Path, config: dict, resume: bool) -> dict:
             or previous.get("configuration") != config
             or not isinstance(previous.get("runs"), dict)
             or not all(isinstance(run, dict) for run in previous["runs"].values())
+            or not isinstance(previous.get("attempts"), dict)
         ):
             raise CliError("checkpoint configuration differs or is invalid")
         _money(previous["spent_usd"])
+        for attempts in previous["attempts"].values():
+            if not isinstance(attempts, list):
+                raise CliError("invalid attempt history")
+            for attempt in attempts:
+                if (
+                    not isinstance(attempt, dict)
+                    or attempt.get("status") not in {"running", "interrupted", "complete", "partial"}
+                    or not isinstance(attempt.get("reason"), str)
+                    or not isinstance(attempt.get("started_at"), str)
+                    or not isinstance(attempt.get("run"), (dict, type(None)))
+                ):
+                    raise CliError("invalid attempt history")
+                _money(attempt["cost_usd"])
     except (KeyError, json.JSONDecodeError, UnicodeError):
         raise CliError("invalid checkpoint") from None
     return previous
@@ -287,11 +335,27 @@ def _unassessed(agenda: Agenda, reason: str) -> dict:
                 recommendation=None, rationale=reason, policy_sources=[],
                 factual_sources=[], missing_information=[reason],
                 uncertainty_reason=reason,
+                validation_errors=[reason],
             ).model_dump(mode="json")
             for proposal in agenda.proposals
         ],
         "errors": [reason],
     }
+
+
+def _code_fingerprint() -> str:
+    """Hash actual runtime source and lock data, independent of checkout path or docs commits."""
+    package = Path(__file__).resolve().parent
+    files = {f"voting_assistant/{path.relative_to(package).as_posix()}": path for path in package.rglob("*.py")}
+    repository = package.parent.parent
+    for name in ("pyproject.toml", "uv.lock"):
+        if (repository / name).is_file():
+            files[name] = repository / name
+    return _sha(json.dumps({name: _sha(_bytes(path, "runtime source")) for name, path in sorted(files.items())}, sort_keys=True).encode())
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def run_evaluation(
@@ -308,7 +372,8 @@ def run_evaluation(
     selected = [meeting for meeting in meetings if meeting.split == manifest.split]
     config = {
         **config,
-        "checkpoint_version": 1,
+        "checkpoint_version": 2,
+        "code_sha256": _code_fingerprint(),
         "manifest_sha256": manifest_sha256,
         "dataset_kind": manifest.dataset_kind,
         "split": manifest.split,
@@ -324,6 +389,11 @@ def run_evaluation(
                 raise CliError("previous spend exceeds the requested budget")
             report["max_cost_usd"] = str(budget)
             report["split_counts"] = dict(Counter(meeting.split for meeting in meetings))
+            for history in report["attempts"].values():
+                for attempt in history:
+                    if attempt["status"] == "running":
+                        attempt["status"] = "interrupted"
+                        attempt["interruption_detected_at"] = _now()
 
             def checkpoint() -> None:
                 report["metrics"] = summarize(selected, runs)
@@ -343,12 +413,26 @@ def run_evaluation(
                         checkpoint()
                     continue
 
+                previous_run = runs.get(meeting_id, {})
+                history = report["attempts"].setdefault(meeting_id, [])
+                attempt = {
+                    "number": len(history) + 1,
+                    "reason": "first_attempt" if not history else "resume_incomplete_attempt",
+                    "previous_errors": previous_run.get("errors", []),
+                    "status": "running", "started_at": _now(), "finished_at": None,
+                    "cost_usd": "0", "run": None,
+                }
+                history.append(attempt)
+                checkpoint()
+
                 def account(cost: Decimal) -> None:
-                    report["spent_usd"] = str(spent_before + _money(cost))
+                    recorded = _money(cost)
+                    attempt["cost_usd"] = str(recorded)
+                    report["spent_usd"] = str(spent_before + recorded)
                     checkpoint()
 
-                # A previous partial attempt is replaced only after the new attempt
-                # returns. Its recorded spend stays in spent_before.
+                # History is persisted before the call, including conservative reservations.
+                # Keep every previous result even when runs advances to the latest attempt.
                 try:
                     result = assessor(agenda, remaining, account)
                     run = result.model_dump(mode="json")
@@ -359,7 +443,8 @@ def run_evaluation(
                     run = _unassessed(agenda, f"Vurderingen feilet ({type(error).__name__}).")
                 if run.get("status") == "complete" and not _complete(run, agenda):
                     run["status"] = "partial"
-                    run.setdefault("errors", []).append("assessment did not cover the ordered agenda")
+                    run.setdefault("errors", []).append("assessment is incomplete or contains validation errors")
+                attempt.update({"status": run["status"], "finished_at": _now(), "run": run})
                 runs[meeting_id] = run
                 checkpoint()
             return report

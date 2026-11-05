@@ -9,8 +9,8 @@ import unittest
 from anthropic import Anthropic
 import httpx2
 
-from voting_assistant.assessment import ASSESSMENT_PROMPT, assess
-from voting_assistant.contracts import Agenda, Guideline, Proposal, Source
+from voting_assistant.assessment import ASSESSMENT_PROMPT, _facts, _user_input, assess
+from voting_assistant.contracts import Agenda, Assessment, Guideline, Proposal, Source
 
 MEETING = date(2025, 7, 1)
 FACT = "The nominee chairs the audit committee."
@@ -51,7 +51,7 @@ def recommendation(proposal_id: str = "1") -> dict:
         "proposal_id": proposal_id, "status": "assessed", "recommendation": "AVSTÅ",
         "rationale": "The rule and the source were checked.",
         "policy_sources": [
-            {"guideline_id": RULE.guideline_id, "policy_version": RULE.policy_version, "quote": POLICY}
+            {"guideline_id": RULE.guideline_id, "policy_version": RULE.policy_version}
         ],
         "factual_sources": [{"source_number": 1, "quote": FACT}],
         "missing_information": [], "uncertainty_reason": None,
@@ -100,7 +100,10 @@ class AssessmentTests(unittest.TestCase):
             requests.append((request.url.path, payload))
             if request.url.path.endswith("/count_tokens"):
                 return httpx2.Response(200, json={"input_tokens": 800})
+            self.assertEqual(request.extensions["timeout"]["read"], 180.0)
             result = next(pending)
+            if callable(result):
+                result = result(payload)
             if result is None:
                 raise httpx2.ReadTimeout("secret-test-string", request=request)
             return httpx2.Response(200, json=result)
@@ -139,6 +142,83 @@ class AssessmentTests(unittest.TestCase):
         self.assertEqual(charges[-1], run.cost_usd)
         self.assertGreater(charges[0], charges[1])
 
+    def test_shared_excerpts_reconstruct_every_local_source_without_changing_data(self):
+        meeting = agenda("1", "2")
+        exact_text = "  Fiscal year 2025\nTax fees \u200b277\nTotal fees 3170 \n"
+        near_match = exact_text.replace("\u200b", "")
+        meeting.proposals[0].sources += [PROPOSAL_SOURCE.model_copy(update={"quote": exact_text})]
+        meeting.proposals[1].sources = [
+            PROPOSAL_SOURCE.model_copy(update={"document": "Other notice", "page": 9, "section": "Other"}),
+            PROPOSAL_SOURCE.model_copy(update={"quote": exact_text, "page": 12}),
+            PROPOSAL_SOURCE.model_copy(update={"quote": near_match, "page": 13}),
+        ]
+        before = meeting.model_dump_json()
+        facts = _facts(meeting)
+        payload = json.loads(_user_input(meeting, facts))
+        self.assertEqual(len(payload["shared_excerpts"]), 3)
+        self.assertCountEqual(payload["shared_excerpts"].values(), [FACT, exact_text, near_match])
+        self.assertEqual([row["proposal_id"] for row in payload["proposals"]], ["1", "2"])
+        for row in payload["proposals"]:
+            reconstructed = [
+                {**{key: value for key, value in source.items() if key != "excerpt_id"},
+                 "quote": payload["shared_excerpts"][source["excerpt_id"]]}
+                for source in row["factual_excerpts"]
+            ]
+            expected = [
+                {"source_number": number, "document": source.document, "section": source.section,
+                 "page": source.page, "quote": source.quote}
+                for number, source in enumerate(facts[row["proposal_id"]], 1)
+            ]
+            self.assertEqual(reconstructed, expected)
+        self.assertEqual(meeting.model_dump_json(), before)
+
+    def test_shared_catalog_does_not_authorize_another_proposals_fact(self):
+        meeting = agenda("1", "2")
+        second_fact = "Only the second nominee has this documented qualification."
+        meeting.proposals[1].sources = [PROPOSAL_SOURCE.model_copy(update={"quote": second_fact, "page": 9})]
+        unauthorized = recommendation("1")
+        unauthorized["factual_sources"] = [{"source_number": 2, "quote": second_fact}]
+        authorized = recommendation("2")
+        authorized["factual_sources"] = [{"source_number": 1, "quote": second_fact}]
+        run, requests, _ = self.run_with(meeting, [search(), answer(unauthorized, authorized)])
+        payload = json.loads(requests[0][1]["messages"][0]["content"])
+        self.assertIn(second_fact, payload["shared_excerpts"].values())
+        self.assertEqual(run.status, "partial")
+        self.assertIsNone(run.assessments[0].recommendation)
+        self.assertEqual(run.assessments[0].factual_sources, [])
+        self.assertEqual(run.assessments[1].status, "assessed")
+        self.assertEqual(run.assessments[1].factual_sources[0].page, 9)
+
+    def test_shared_input_still_excludes_labels_and_ineligible_sources(self):
+        meeting = agenda("1")
+        meeting.company_id = "company-reference-marker"
+        meeting.meeting_id = "meeting-reference-marker"
+        meeting.document_source = PROPOSAL_SOURCE.model_copy(update={"quote": "unused-document-reference"})
+        meeting.proposals[0].sources += [
+            PROPOSAL_SOURCE.model_copy(update={"quote": "future-fact-marker", "document_date": date(2026, 1, 1)}),
+            PROPOSAL_SOURCE.model_copy(update={"quote": "unlocated-fact-marker", "page": None, "section": None}),
+        ]
+        serialized = _user_input(meeting, _facts(meeting))
+        for excluded in ("company-reference-marker", "meeting-reference-marker", "unused-document-reference",
+                         "future-fact-marker", "unlocated-fact-marker", "unused_derived_type"):
+            self.assertNotIn(excluded, serialized)
+        payload = json.loads(serialized)
+        self.assertEqual(set(payload), {"meeting_date", "shared_excerpts", "proposals"})
+        self.assertEqual(len(payload["shared_excerpts"]), 1)
+        self.assertEqual(len(payload["proposals"][0]["factual_excerpts"]), 1)
+
+    def test_short_valid_fact_quote_retains_complete_original_source_context(self):
+        meeting = agenda("1")
+        full_text = "Fiscal 2025 fees in USD thousands: tax 277; total 3170. " + FACT
+        meeting.proposals[0].sources[0] = PROPOSAL_SOURCE.model_copy(update={"quote": full_text})
+        row = recommendation()
+        run, _, _ = self.run_with(meeting, [search(), answer(row)])
+        self.assertEqual(run.status, "complete")
+        source = run.assessments[0].factual_sources[0]
+        self.assertEqual(source.quote, full_text)
+        self.assertEqual((source.page, source.sha256), (PROPOSAL_SOURCE.page, PROPOSAL_SOURCE.sha256))
+        self.assertEqual(json.loads(run.raw_answer)["assessments"][0]["factual_sources"][0]["quote"], FACT)
+
     def test_duplicate_missing_and_unknown_ids_never_disappear(self):
         run, _, _ = self.run_with(agenda("1", "2", "3"), [
             search(), answer(recommendation(), recommendation(), recommendation("3"), recommendation("4")),
@@ -159,6 +239,86 @@ class AssessmentTests(unittest.TestCase):
         run, _, _ = self.run_with(agenda("1"), [answer(row)])
         self.assertEqual(run.status, "complete")
         self.assertEqual(run.assessments[0].status, "manual_review")
+        self.assertIsNone(run.assessments[0].recommendation)
+        self.assertEqual(run.assessments[0].missing_information, ["Nominee independence"])
+        self.assertEqual(run.assessments[0].validation_errors, [])
+        self.assertIsNone(run.assessments[0].unverified_explanation)
+
+    def test_canonical_rule_preserves_scope_and_rejects_model_authored_quotes(self):
+        full_rule = RULE.model_copy(update={
+            "text": "At a large- or mid-cap company in developed markets, "
+                    "audit committee members should be independent. Other conditions also apply.",
+        })
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(recommendation())], index=FakeIndex(full_rule))
+        self.assertEqual(run.status, "complete")
+        self.assertEqual(run.assessments[0].policy_sources[0].quote, full_rule.text)
+        for quote in (POLICY, full_rule.text, "A fabricated rule"):
+            row = recommendation()
+            row["policy_sources"][0]["quote"] = quote
+            run, _, _ = self.run_with(agenda("1"), [search(), answer(row)], index=FakeIndex(full_rule))
+            self.assertEqual(run.status, "partial")
+            self.assertIsNone(run.assessments[0].recommendation)
+            self.assertEqual(run.assessments[0].policy_sources, [])
+
+    def test_wrong_rule_id_or_version_is_not_canonicalized(self):
+        for key in ("guideline_id", "policy_version"):
+            row = recommendation()
+            row["policy_sources"][0][key] = "unseen"
+            run, _, _ = self.run_with(agenda("1"), [search(), answer(row)])
+            self.assertEqual(run.status, "partial")
+            self.assertIsNone(run.assessments[0].recommendation)
+            self.assertEqual(run.assessments[0].policy_sources, [])
+
+    def test_invalid_fact_preserves_separate_unverified_explanation(self):
+        row = recommendation()
+        row.update({
+            "status": "manual_review", "recommendation": None,
+            "rationale": "The market and size classification are missing.",
+            "missing_information": ["Market classification", "Company size classification"],
+            "uncertainty_reason": "Cannot establish which independence threshold applies.",
+        })
+        row["factual_sources"][0]["quote"] = "No such factual passage exists."
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(row)])
+        result = run.assessments[0]
+        self.assertEqual(run.status, "partial")
+        self.assertEqual(result.status, "manual_review")
+        self.assertIsNone(result.recommendation)
+        self.assertEqual(result.policy_sources, [])
+        self.assertEqual(result.factual_sources, [])
+        self.assertIn("Sitatet", result.validation_errors[0])
+        self.assertEqual(result.rationale, result.validation_errors[0])
+        self.assertEqual(result.unverified_explanation.rationale, row["rationale"])
+        self.assertEqual(result.unverified_explanation.missing_information, row["missing_information"])
+        self.assertEqual(result.unverified_explanation.uncertainty_reason, row["uncertainty_reason"])
+
+    def test_missing_applicability_cannot_become_a_recommendation(self):
+        row = recommendation()
+        row["missing_information"] = ["Company size classification required by the rule"]
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(row)])
+        self.assertEqual(run.status, "partial")
+        self.assertIsNone(run.assessments[0].recommendation)
+        self.assertEqual(run.assessments[0].unverified_explanation.missing_information, row["missing_information"])
+
+    def test_old_assessment_records_remain_readable(self):
+        run, _, _ = self.run_with(agenda("1"), [search(), answer(recommendation())])
+        legacy = run.assessments[0].model_dump(exclude={"validation_errors", "unverified_explanation"})
+        restored = Assessment.model_validate(legacy)
+        self.assertEqual(restored.validation_errors, [])
+        self.assertIsNone(restored.unverified_explanation)
+
+    def test_numerical_fact_citation_preserves_operands_units_and_periods(self):
+        table = "Fiscal year 2025 (USD thousands)\nTax fees 277\nTotal fees 3170"
+        meeting = agenda("1")
+        meeting.proposals[0].sources = [PROPOSAL_SOURCE.model_copy(update={"quote": table.replace("277", "\u200b277")})]
+        row = recommendation()
+        row["rationale"] = "Tax fees are 277 / 3170 = 8.74% of total fees in fiscal 2025."
+        row["factual_sources"][0]["quote"] = table
+        run, _, _ = self.run_with(meeting, [search(), answer(row)])
+        self.assertEqual(run.status, "complete")
+        self.assertEqual(run.assessments[0].factual_sources[0].quote, meeting.proposals[0].sources[0].quote)
+        row["factual_sources"][0]["quote"] = table.replace("277", "999")
+        run, _, _ = self.run_with(meeting, [search(), answer(row)])
+        self.assertEqual(run.status, "partial")
         self.assertIsNone(run.assessments[0].recommendation)
 
     def test_empty_search_requires_manual_review(self):
@@ -206,7 +366,7 @@ class AssessmentTests(unittest.TestCase):
 
     def test_budget_rejects_paid_request_and_ambiguous_timeout_keeps_reservation(self):
         charges = []
-        run, requests, _ = self.run_with(agenda("1"), [], budget="0.031", on_cost=charges.append)
+        run, requests, _ = self.run_with(agenda("1"), [], budget="0.181", on_cost=charges.append)
         self.assertEqual(run.status, "partial")
         self.assertEqual(run.cost_usd, 0)
         self.assertEqual([path for path, _ in requests], ["/v1/messages/count_tokens"])
@@ -220,9 +380,41 @@ class AssessmentTests(unittest.TestCase):
     def test_truncated_reply_names_stop_reason_and_output_limit_scales(self):
         cut_off = response([{"type": "text", "text": "{"}], "max_tokens")
         run, requests, _ = self.run_with(agenda("1a", "1b", "1c", "2", "3"), [cut_off])
-        self.assertEqual(requests[-1][1]["max_tokens"], 10000)
+        self.assertEqual(requests[-1][1]["max_tokens"], 28000)
         self.assertEqual(run.status, "partial")
         self.assertIn("stop_reason: max_tokens", run.errors[0])
+
+    def test_five_proposal_response_has_room_for_thinking_and_complete_answer(self):
+        ids = ("1a", "1b", "1c", "2", "3")
+        required_output = 12001  # Simulated thinking plus answer exceeds the former 10,000 cap.
+
+        def answer_with_thinking(payload):
+            if payload["max_tokens"] < required_output:
+                result = response([{"type": "text", "text": "{"}], "max_tokens")
+                result["usage"]["output_tokens"] = payload["max_tokens"]
+                return result
+            result = answer(*(recommendation(proposal_id) for proposal_id in ids))
+            result["usage"]["output_tokens"] = required_output
+            return result
+
+        run, _, _ = self.run_with(agenda(*ids), [search(), answer_with_thinking])
+        self.assertEqual(run.status, "complete")
+        self.assertEqual([row.proposal_id for row in run.assessments], list(ids))
+        self.assertTrue(all(row.status == "assessed" for row in run.assessments))
+        self.assertGreater(run.output_tokens, 10000)
+
+    def test_five_proposal_cap_is_reserved_before_any_paid_request(self):
+        charges = []
+        run, requests, _ = self.run_with(
+            agenda("1a", "1b", "1c", "2", "3"), [], budget="0.30", on_cost=charges.append,
+        )
+        self.assertEqual(requests, [])
+        self.assertEqual(charges, [])
+        self.assertEqual(run.cost_usd, 0)
+        self.assertEqual(run.status, "partial")
+        self.assertEqual(len(run.assessments), 5)
+        self.assertTrue(all(row.status == "manual_review" for row in run.assessments))
+        self.assertIn("Kostnadsrammen", run.errors[0])
 
     def test_wrong_source_number_resolves_by_quote_within_the_proposal(self):
         misnumbered = recommendation()
