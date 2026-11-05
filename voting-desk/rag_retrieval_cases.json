@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "purpose": "Development regression anchors manually checked against canonical extracted source text. These are incomplete relevance judgments, not an independent retrieval benchmark or voting labels.",
+  "scope": "Three 2024 pilot meetings in the development partition. Questions concern published facts; no NBIM votes or outcome rationales are included.",
+  "cases": [
+    {
+      "id": "fluence-director-attendance",
+      "meeting_id": "1818232",
+      "question": "What minimum attendance did Fluence report for each director at board and committee meetings during fiscal 2023?",
+      "queries": ["Fluence director attendance board committee meetings fiscal 2023", "minimum attendance each director annual proxy"],
+      "expected_quote": "During the fiscal year ended September 30, 2023, each director attended at least 75% of the aggregate of (i) all meetings of the Board",
+      "source_document_id": "db423d1a0c861209e902253b"
+    },
+    {
+      "id": "fluence-compensation-member-independence",
+      "meeting_id": "1818232",
+      "question": "Which members of Fluence's compensation committee do not meet Nasdaq's independence standard?",
+      "queries": ["Fluence compensation committee members independence Nasdaq", "compensation human resources committee non independent directors"],
+      "expected_quote": "Barbara Humpton and Tish Mendoza do not qualify as “independent directors” under the Nasdaq rules.",
+      "source_document_id": "db423d1a0c861209e902253b"
+    },
+    {
+      "id": "fluence-independent-directors",
+      "meeting_id": "1818232",
+      "question": "Which Fluence directors did the board affirmatively identify as independent?",
+      "queries": ["Fluence director independence board determination names", "independent directors corporate governance board composition"],
+      "expected_quote": "Our Board has affirmatively determined that Cynthia Arnold, Herman Bulls, Elizabeth Fessenden, and Harald von Heynitz are each an “independent director,”",
+      "source_document_id": "db423d1a0c861209e902253b"
+    },
+    {
+      "id": "fluence-incentive-modifier",
+      "meeting_id": "1818232",
+      "question": "Did Fluence apply the additional EBITDA-related modifier to its fiscal 2023 annual incentive awards, and why?",
+      "queries": ["Fluence annual incentive awards fiscal 2023 EBITDA modifier outcome", "annual incentive compensation extra modifier EBITDA performance"],
+      "expected_quote": "The Company did not achieve break-even or positive annual adjusted EBITDA for fiscal year 2023 so no \"incremental modifier\" was added to any AIP awards.",
+      "source_document_id": "db423d1a0c861209e902253b"
+    },
+    {
+      "id": "first-horizon-jordan-roles",
+      "meeting_id": "1832444",
+      "question": "Does First Horizon's board chair also serve as chief executive, and is that director classified as independent?",
+      "queries": ["First Horizon board chair chief executive director independence", "chairman president CEO independent director current leadership structure"],
+      "expected_quote": "Mr. Jordan, as our current Chairman of the Board, President and Chief Executive Officer, is not independent.",
+      "source_document_id": "28d1d57070515e6a62a33e96"
+    },
+    {
+      "id": "first-horizon-retention-vesting",
+      "meeting_id": "1832444",
+      "question": "What vesting period applied to the replacement retention cash units for First Horizon's named executives after the TD acquisition was cancelled?",
+      "queries": ["First Horizon replacement retention cash units vesting executive TD acquisition cancellation", "named executives new retention awards RCUs vesting period"],
+      "expected_quote": "all TD-acquisition RCUs were canceled, and all NEOs except Mr. Jordan received new RCUs with a three-year vesting period.",
+      "source_document_id": "28d1d57070515e6a62a33e96"
+    },
+    {
+      "id": "first-horizon-stock-award-minimum-vesting",
+      "meeting_id": "1832444",
+      "question": "What minimum vesting period does First Horizon specify for awards paid or denominated in stock?",
+      "queries": ["First Horizon stock awards minimum vesting requirement grant notices", "incentive plan stock denominated awards minimum vesting"],
+      "expected_quote": "A one-year minimum vesting requirement imposed on grant notices applicable to awards paid or denominated in stock subject to a 5% carve-out",
+      "source_document_id": "28d1d57070515e6a62a33e96"
+    },
+    {
+      "id": "first-horizon-average-attendance",
+      "meeting_id": "1832444",
+      "question": "What average attendance rate does First Horizon report for incumbent directors at board and committee meetings?",
+      "queries": ["First Horizon incumbent director average attendance board committee meetings", "director meeting attendance rate governance summary"],
+      "expected_quote": "Incumbent director attendance at Board & committee meetings | Average attendance > 96%",
+      "source_document_id": "28d1d57070515e6a62a33e96"
+    },
+    {
+      "id": "first-financial-dueser-independence",
+      "meeting_id": "1834879",
+      "question": "Why is Scott Dueser not considered an independent director at First Financial Bankshares?",
+      "queries": ["First Financial Scott Dueser director independence current positions", "Dueser board independence leadership roles"],
+      "expected_quote": "Given his position as Chairman, President, and Chief Executive Officer, Mr. Dueser is not considered an independent director.",
+      "source_document_id": "d5be5c991377f08fc96944e5"
+    },
+    {
+      "id": "first-financial-compensation-chair",
+      "meeting_id": "1834879",
+      "question": "Who chairs First Financial Bankshares' compensation committee, and are its members considered independent?",
+      "queries": ["First Financial compensation committee chair member independence", "compensation committee chairman independent members"],
+      "expected_quote": "Mr. Lancaster is the chairman of the committee. All committee members are deemed to be independent.",
+      "source_document_id": "d5be5c991377f08fc96944e5"
+    },
+    {
+      "id": "first-financial-rsu-vesting",
+      "meeting_id": "1834879",
+      "question": "What share of First Financial Bankshares' long-term incentives uses restricted stock units, and how long do those units take to vest?",
+      "queries": ["First Financial long term incentives restricted stock units allocation vesting period", "executive compensation restricted stock units proportion vesting"],
+      "expected_quote": "Grant one-third of our long-term incentives in restricted stock units with a three-year vesting period",
+      "source_document_id": "d5be5c991377f08fc96944e5"
+    },
+    {
+      "id": "first-financial-director-attendance",
+      "meeting_id": "1834879",
+      "question": "What minimum board and committee meeting attendance did First Financial Bankshares report for its directors in 2023?",
+      "queries": ["First Financial directors attendance board committee meetings 2023", "minimum director meeting attendance annual proxy"],
+      "expected_quote": "In 2023, each of the directors attended at least 75% of the meetings of the Board of Directors and the committees of the Board of Directors",
+      "source_document_id": "d5be5c991377f08fc96944e5"
+    }
+  ]
+}

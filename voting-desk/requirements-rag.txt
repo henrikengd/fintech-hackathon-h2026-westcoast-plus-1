@@ -1,0 +1,2 @@
+# Optional local evidence search. Install in the existing Voting Desk environment.
+fastembed==0.9.1

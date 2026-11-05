@@ -1,7 +1,13 @@
 .env
-.venv/
+.venv
 __pycache__/
 dist/voting-desk.zip
 data/edgar/
 .installing
 .install.log
+
+# Reproducible mixed-year data exports.
+data/mixed-80-20/
+
+# Local model weights, vector index and experiment exports.
+data/local-rag/

@@ -4,6 +4,10 @@ Case 1, Stemmegivningsagenten. Westcoast + 1, FinTech Hackathon H2026. Student p
 
 Voting Desk reads a general meeting agenda and proposes FOR, MOT or AVSTÅ on every proposal, with the deciding guideline and a confidence. Low confidence and every vote against the board go to a stewardship manager. Nothing is published without sign-off, and every decision is logged.
 
+Det aktive modellvalget [maksimerer nå F1 for avvik fra styret](README-f1.md). Se også [den låste oktober-testen](README-fresh-test.md) og [Claude med lokalt historikksøk](README-claude-board.md). Den nye [sammenligningen av historikksøk og daterte saksdokumenter](README-relevance.md) viser hvilke endringer som faktisk påvirker F1, med kontroll av tidsgrenser og kilder.
+
+Laget kan installere de lagrede modellene, sammenligne resultatene og kjøre eksempelsaker fra [modellpakken](model-kit/README.md).
+
 ## Try it
 
 Unzip `voting-desk.zip`. You need Python 3.12 or later.
@@ -42,6 +46,45 @@ The website's agent searches the filing and is the default. Untick it for the th
 | `test_desk.py` | Offline tests: `python test_desk.py` |
 | `plugin/` | Plugin source. `python review.py pack` builds the zips |
 | `results/` | Saved results. `results/raw/` holds every model reply |
+
+## Local evidence search
+
+The active local model maximizes F1 for NBIM voting differently from the board. Model selection uses forward validation before 2024; the final threshold uses 2024 calibration: [README-f1.md](README-f1.md). Earlier balanced-threshold and literal-MOT experiments remain documented separately. There is no active 85/85 constraint.
+
+An exploratory local RAG pilot combines SQLite keyword search with CPU embeddings. Run `python rag_app.py` after the setup in [README-rag.md](README-rag.md). It uses pre-decision source documents, has its own index and does not change the saved holdout results.
+
+## Mixed-year 80/20 experiment
+
+Prepare the experimental data partition from the pooled NBIM source:
+
+```bash
+python run.py split
+```
+
+All 13,757 observations from 2019-2026 already live in `data/real_votes.csv`. The older validation/test tables and five pilot meetings are subsets of this source. Adding them again would duplicate observations. The N-PX file belongs to an unverified manager and is outside this NBIM dataset.
+
+The command writes `data/mixed-80-20/train.csv`, `test.csv` and `manifest.json`. It shuffles company/date groups with seed 2026, within each year and whether the group contains a MOT vote. Same-company meetings on the same date stay together, including distinct meeting IDs. About 80% of groups go to training and 20% to testing. Group sizes differ, so the row proportions are approximate. The manifest records actual yearly counts, missing labels, file hashes and dataset identity. Rows without a known vote stay in the data and must be excluded from supervised target scoring.
+
+This is an exploratory mixed-year experiment. The case asks for earlier training meetings and later test meetings. This split estimates performance within a historical period and contains data already seen in earlier development. Year balancing does not remove all bias.
+
+Use the saved assignment through the dataset loader:
+
+```python
+import desk
+from dataset import load_split
+
+parts = load_split()
+train, test = parts["train"], parts["test"]
+train_prior = desk.precedent_features(train, votes=train)
+test_prior = desk.precedent_features(test, votes=train)
+screen = desk.Screen().fit(train, train_prior)
+```
+
+Supply `train` as the historical record in `desk.request` as well. This keeps test labels out of training features and test prompts while retaining the five-day historical cutoff. The frozen `desk.load_votes` assigns splits by date, so use `load_split` for this experiment.
+
+Choose thresholds and calibrate confidence with an internal split or cross-validation inside the 80% training partition. Future model outputs must use a separate directory named with the manifest's dataset ID. Existing model weights, confidence, Claude replies and metrics belong to the original time-based experiment. Preparing this dataset does not train or evaluate the full pipeline. `python run.py` still reproduces those original saved metrics.
+
+Re-running the same preparation verifies and reuses identical output. A different seed or source requires a new `--output` directory. Run `python -m unittest test_dataset -v` to check the partition and loader.
 
 ## Method
 
@@ -117,7 +160,7 @@ Holdout 2025-2026: 3,449 scored proposals, 169 votes against the board.
 |---|---|
 | Claude Sonnet 5.5 API | The drafting model and agent. Haiku and Opus 5.5 in the model comparison |
 | Claude Code, Opus 5.5 | Research, design review, code, reports and this README. People set the direction and checked the results |
-| OpenAI Codex | The earlier pilot in the group repo |
+| OpenAI Codex | The earlier pilot, local RAG/vector experiments, supervised history models, tests and exploratory reports |
 
 API spend was about $26 in saved runs at Sonnet list prices, plus small tests.
 

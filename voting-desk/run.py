@@ -436,7 +436,10 @@ def show(m):
 
 if __name__ == "__main__":
     stage = sys.argv[1:] or ["report"]
-    if stage[0] == "build":
+    if stage[0] == "split":
+        from dataset import main as prepare_split
+        prepare_split(stage[1:])
+    elif stage[0] == "build":
         build(stage[1])
     elif stage[0] in ("freeze", "resist", "masked", "rates"):
         globals()[stage[0]]()

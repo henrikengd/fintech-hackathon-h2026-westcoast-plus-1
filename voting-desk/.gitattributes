@@ -1,0 +1,6 @@
+# Experiment manifests hash these inputs and source files byte for byte.
+*.py -text
+/data/real_votes.csv -text
+/data/meetings/*.csv -text
+/data/meetings/*.html -text
+/results/freeze.json -text
