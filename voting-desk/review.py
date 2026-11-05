@@ -25,7 +25,6 @@ import desk
 import sheet
 
 OUT = desk.ROOT / "results"
-RAW = desk.ROOT / "data" / "real_votes.csv"
 SUFFIX = re.compile(r"\b(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|ag|asa|ab|sa|nv|holdings?|group)\b")
 SLATE = re.compile(r"\belect\b.*\b(?:members|directors|nominees)\b", re.I)
 EXTRACT = """Extract the voting items from this general meeting document, in order, with the board's recommendation if stated.
@@ -36,21 +35,10 @@ _state = {}
 _open = {}
 
 
-def recorded():
-    """The 2024-2026 votes saved in results/, for a copy without the organisers' file."""
-    frames = [pd.read_csv(OUT / f"items_{part}.csv", dtype=str, keep_default_na=False) for part in ("val", "test")]
-    votes = pd.concat(frames, ignore_index=True)
-    votes["date"] = pd.to_datetime(votes["meeting_date"])
-    votes["voted"] = votes["nbim_vote"] != ""
-    votes["against"] = pd.to_numeric(votes["against"], errors="coerce")
-    votes["person"] = votes["proposal_text"].map(desk.person)
-    return votes.sort_values("date", kind="stable").reset_index(drop=True)
-
-
 def state():
     """The screen and threshold evaluated on the holdout. Loaded once."""
     if not _state:
-        votes = desk.load_votes() if RAW.exists() else recorded()
+        votes = desk.load_votes()
         saved = OUT / "screen.joblib"
         if saved.exists():
             screen = joblib.load(saved)
@@ -69,7 +57,7 @@ def pack():
     dist = desk.ROOT / "dist"
     dist.mkdir(exist_ok=True)
     code = ["boot.py", "agent.py", "desk.py", "review.py", "sheet.py", "rules.json", "requirements.txt"]
-    saved = ["freeze.json", "confidence.json", "items_val.csv", "items_test.csv", "screen.joblib"]
+    saved = ["freeze.json", "confidence.json", "screen.joblib"]
     server = json.loads((source / ".mcp.json").read_text(encoding="utf-8"))
     for name, command in (("voting-desk-plugin.zip", "python"), ("voting-desk-plugin-mac.zip", "python3")):
         server["mcpServers"]["voting-desk"]["command"] = command
@@ -78,6 +66,7 @@ def pack():
                 package.write(desk.ROOT / file, file)
             for file in saved:
                 package.write(OUT / file, f"results/{file}")
+            package.write(desk.ROOT / "data/real_votes.csv", "data/real_votes.csv")
             package.write(source / ".claude-plugin/plugin.json", ".claude-plugin/plugin.json")
             package.write(source / "skills/review-meeting/SKILL.md", "skills/review-meeting/SKILL.md")
             package.writestr(".mcp.json", json.dumps(server, indent=2))
@@ -91,6 +80,7 @@ def pack():
                 package.write(path, Path("voting-desk") / path.relative_to(desk.ROOT))
         for name in ("voting-desk-plugin.zip", "voting-desk-plugin-mac.zip"):
             package.write(dist / name, f"voting-desk/{name}")
+        package.write(desk.ROOT / "data/real_votes.csv", "voting-desk/data/real_votes.csv")
         package.writestr("voting-desk/.env", "\n".join((f"ANTHROPIC_API_KEY={os.environ['ANTHROPIC_API_KEY']}", f"ANTHROPIC_MODEL={desk.MODEL}", f"ANTHROPIC_EFFORT={desk.EFFORT}", "")))
     print("wrote dist/")
 

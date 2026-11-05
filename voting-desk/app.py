@@ -3,7 +3,6 @@
   python app.py
 
 Runs on this computer only. The first run installs what it needs. A key comes from .env or the page and is kept in memory.
-Uses data/real_votes.csv if present, otherwise the votes saved in results/.
 """
 import boot  # noqa: F401
 import json

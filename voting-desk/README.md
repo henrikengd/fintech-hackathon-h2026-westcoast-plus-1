@@ -24,7 +24,7 @@ The first run installs everything into a `.venv` inside this folder, which takes
 python run.py
 ```
 
-The website's agent searches the filing and is the default. Untick it for the three-pass method evaluated below. Without the organisers' file, both surfaces use the 2024-2026 votes in `results/`, so they see less history.
+The website's agent searches the filing and is the default. Untick it for the three-pass method evaluated below.
 
 ## Files
 
@@ -96,7 +96,7 @@ Holdout 2025-2026: 3,449 scored proposals, 169 votes against the board.
 - The confidence number was added after the freeze, calibrated on 2024 only. It comes from pass agreement, flags and the text model. The lanes are unchanged. The model's own low rating routes nothing; using it would give 93.5% caught and 48.4% not flagged.
 - The website's default agent is the exploratory path. The evaluated method is the three-pass one.
 - The resistance test covers ballot text, not uploaded documents.
-- The vote file comes from the organisers. NBIM's vote database is not open, so we use it as supplied and keep it out of the code.
+- The vote file comes from the organisers, and we use it as supplied.
 - 194 companies, probably from current holdings. Position size and market cap are not used.
 - NBIM publishes no effective dates or abstention rule, so dates are first public sightings and AVSTÅ goes to a person.
 - NBIM's votes are public, so the model may remember them. With names masked on 30 meetings, 94.1% of drafts were unchanged.
@@ -106,7 +106,7 @@ Holdout 2025-2026: 3,449 scored proposals, 169 votes against the board.
 
 | Source | URL |
 |---|---|
-| NBIM votes, from the organisers. Rows used for scoring are in `results/` | https://www.nbim.no/en/responsible-investment/voting/our-voting-records/ |
+| NBIM votes, from the organisers, shared with their approval in `data/` | https://www.nbim.no/en/responsible-investment/voting/our-voting-records/ |
 | Global Voting Guidelines | https://www.nbim.no/en/responsible-investment/voting/global-voting-guidelines/ |
 | Position papers | https://www.nbim.no/en/responsible-investment/position-papers/ |
 | SEC EDGAR | https://www.sec.gov/edgar |
