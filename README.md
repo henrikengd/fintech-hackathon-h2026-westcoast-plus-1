@@ -4,6 +4,8 @@ FinTech Hackathon H2026
 
 ## Arbeidsplan
 
+[Status, funn og åpne spørsmål](docs/features/claude-voting-assistant/README.md) samler notatene fra avklaringen og viser hvor arbeidet tas opp igjen.
+
 [Prosjekt](https://github.com/users/henrikengd/projects/3) · [Hovedissue](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/1) · [Spesifikasjon](docs/features/claude-voting-assistant/spec.md)
 
 Første gjennomføringsoppgave er [T-02, kjørbart prosjekt og dataformater](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/3).
