@@ -8,11 +8,32 @@ FinTech Hackathon H2026
 
 [Prosjekt](https://github.com/users/henrikengd/projects/3) · [Hovedissue](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/1) · [Spesifikasjon](docs/features/claude-voting-assistant/spec.md)
 
-Første gjennomføringsoppgave er [T-02, kjørbart prosjekt og dataformater](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/3).
+Gjennomføring og verifikasjon står i [leveransejournalen](docs/features/claude-voting-assistant/delivery.md).
 
-## Kjør hovedresultatet
+## Kjør piloten
 
-Legg inn eventuelle oppsettsteg og én kommando som reproduserer hovedresultatet når løsningen er klar.
+Bruk macOS, Linux eller WSL. Installer [uv](https://docs.astral.sh/uv/getting-started/installation/) og Poppler (`pdftotext`). Kjør fra repoets rot.
+
+```sh
+uv sync --locked
+mkdir -p data/raw
+curl -fL 'https://www.nbim.no/contentassets/cbee6983c7d044a6a6d2f286ed5fa3df/global-voting-guildeines_2025.pdf' -o data/raw/nbim-2025-linked.pdf
+curl -fL 'https://investors.sprinklr.com/financial-information/all-sec-filings/content/0001140361-25-017121/0001140361-25-017121.pdf' -o data/raw/sprinklr-2025-proxy.pdf
+uv run --no-sync python -m voting_assistant index --manifest data/policies/nbim-2025.json
+uv run --no-sync python scripts/prepare_example.py --sprinklr-proxy data/raw/sprinklr-2025-proxy.pdf
+```
+
+Kopier `.env.example` til `.env`. Sett `ANTHROPIC_API_KEY`, modell-ID og gjeldende input- og outputpriser per million tokens for den valgte modellen. Miljøvariabler satt i terminalen går foran `.env`. Modell og kostnad registreres i rapporten. [Anthropics priser](https://platform.claude.com/docs/en/about-claude/pricing).
+
+Etter oppsett kjører denne kommandoen vurdering og poengberegning for hele testmøtet.
+
+```sh
+uv run --no-sync python -m voting_assistant evaluate --manifest data/raw/pilot/manifest.json --output data/raw/pilot/run.json --max-cost-usd 2
+```
+
+Bruk `--resume` for å fortsette med samme manifest og konfigurasjon. Rapporten viser MOT-presisjon, MOT-recall, dekning og sammenligning med styrets anbefalinger. [Pilotens kildegrunnlag](docs/data-access.md) beskriver møtene og begrensningene. [Claude-oppsett](docs/claude-setup.md) beskriver den separate chatdemoen.
+
+Kjør lokale regresjonstester med `uv run --no-sync python -m unittest discover -s tests -v`.
 
 ## Datakilder
 
@@ -24,6 +45,6 @@ Stemmedata brukes som evalueringsreferanse. RAG skal søke i daterte retningslin
 
 ## KI og kodekreditering
 
-- OpenAI Codex ble brukt til repooppsett, avklaring av scope, undersøkelse av Claude-integrasjonen og utarbeiding av spesifikasjon og GitHub-oppgaver, samt datakontroll og kildeundersøkelse.
+- OpenAI Codex ble brukt til repooppsett, avklaring av scope, undersøkelse av Claude-integrasjonen og utarbeiding av spesifikasjon og GitHub-oppgaver, samt datakontroll, kildeundersøkelse, implementering og verifikasjon.
 
-Krediter eventuell kode fra startpakken eller andre prosjekter her.
+Startpakken ga oppgavebeskrivelsen og evalueringskravene. Koden bruker den offisielle Python-SDK-en for MCP og Anthropic-klienten. Versjonene er låst i `uv.lock`.
