@@ -9,12 +9,12 @@ Integrasjonsgren er `codex/claude-voting-verification`. Arbeidstrærne ligger un
 | Oppgave | Arbeider | Worktree-navn / gren | Tildelt base | Status |
 |---|---|---|---|---|
 | T-01 / #2 | `/root/verification_data` | `voting-data` / `codex/claude-voting-verification-t01` | `fb704fb` | Pågår: nye møter og historiske kilder |
-| T-04 / #5 | `/root/verification_assessment` | `voting-assessment` / `codex/claude-voting-verification-t04` | `fb704fb` | Pågår: dokumentuttrekk, kanoniske regelsitater og manuelle årsaker |
-| T-05 / #6 | `/root/verification_demo`, koordinator for faktisk chat | `voting-demo` / `codex/claude-voting-verification-t05` | `fb704fb` | Teknisk forberedelse pågår; brukeren oppgir nå innlogget Claude-konto |
-| T-06 / #7 | Ikke tildelt | Planlagt etter integrert #2 og #5 | | Blokkert for sluttkjøring |
+| T-04 / #5 | `/root/verification_assessment` | `voting-assessment` / `codex/claude-voting-verification-t04` | `fb704fb` | `0caf54e` integrert som `f8a5984`; 45 tester passerte. Første liveforsøk krevde større svarramme. |
+| T-05 / #6 | `/root/verification_demo`, koordinator for faktisk chat | `voting-demo` / `codex/claude-voting-verification-t05` | `fb704fb` | `333b04e` og `2a4e42c` integrert som `6cdbd97` og `f8413ed`. Faktisk PDF-chat kjører. |
+| T-06 / #7 | `/root/verification_assessment` | `voting-evaluation` / `codex/claude-voting-verification-t06` | `f8a5984` | Historikk, rapportering og API-angrepspar forberedes. Sluttkjøring venter på integrert #2 og verifisert #5. |
 | T-07 / #8 | Koordinator | `voting-verification` / integrasjonsgren | `fb704fb` | Venter på #6 og #7 |
 
-Felles skrivetilgang er fordelt etter spesifikasjonen. T-04 eier `assessment.py`, `contracts.py` og `prepare_example.py`. T-01 eier nye data-/policyfiler og ny klargjøring. T-05 eier demooppsett og nødvendig serverarbeid. Alle betalte API-kall utføres av koordinatoren etter integrasjon, innen samlet USD 2. Rundens lokale kostnadsjournal ligger i Codex-arbeidsmappens `work/deliver-r2/budget.json`. Ingen modellkall er gjort i revisjon 2 ved denne oppstartskontrollen.
+Felles skrivetilgang er fordelt etter spesifikasjonen. T-04 eier `assessment.py`, `contracts.py` og `prepare_example.py`. T-01 eier nye data-/policyfiler og ny klargjøring. T-05 eier demooppsett og nødvendig serverarbeid. Alle betalte API-kall utføres av koordinatoren etter integrasjon, innen samlet USD 2. Rundens lokale kostnadsjournal ligger i Codex-arbeidsmappens `work/deliver-r2/budget.json`. Ved oppstart var ingen modellkall gjort; oppdatert status følger nedenfor.
 
 ### Verifisert grunnlag
 
@@ -23,6 +23,14 @@ Låst installasjon på Python 3.12.12 fra eksisterende uv-cache passerte. Alle 3
 Claude-fanen viste først innlogging. Brukeren opplyste deretter at kontoen er innlogget og at den er separat fra kontoen med API-kreditter. API-nøkkelen er kopiert direkte til lokal ignorert `.env` i integrasjonsmappen med filmodus 0600. Ingen nøkkel er skrevet til journal eller logger. Faktisk connector-test gjenstår.
 
 Neste steg er å verifisere Claude-tilgangen, integrere arbeidercommits etter gjennomgang og kjøre utviklingspiloten før ny sluttmåling. Uavhengig full gjennomgang samt separate Spec- og Standards-gjennomganger gjenstår. Ingen ny PR er opprettet.
+
+### Integrert verifikasjon under arbeid
+
+5. november 2026, første utviklingsforsøk på `6cdbd97`: manifest `f16dcdeec535b6ab844369e1f4b40d5e3065871ee86130193948e27363b63a65`, Haiku 5.5, input USD 0,10 og output USD 0,50 per million tokens. Pris og maksimalt 128k output kontrollert i [modelloversikten](https://platform.claude.com/docs/en/models/haiku-5-5/overview). Rapport `data/raw/development-r2/first-run.json` bevares. Registrert kostnad USD 0,0211955. CCC ga tre gyldige manuelle svar; Sprinklr ble `partial` med fem manuelle svar fordi modellen nådde 10 000 output-tokens. Ingen ufullstendige anbefalinger ble godkjent. T-05-arbeideren retter den avgrensede svarrammen i en egen liten commit før nytt utviklingsforsøk og før holdout.
+
+Innlogging er faktisk kontrollert i Claude. Kontoen er Free og støtter egen connector. En midlertidig HTTPS-tunnel eksponerer bare den offentlige regelindeksen via lokal port 8002. Connectoren er lagt til og aktiv; ekte `search_guidelines` og `get_guideline`-kall er observert. Kontroll-PDF med alle 70 originalsider og blank side 71 er lastet opp med den faste instruksen. Svaret og kildekontrollen er ennå ikke ferdige. Ingen API-nøkkel er sendt til chatten.
+
+Kontroll-/angreps-PDFene har identiske originalsidebilder ved Poppler 72 dpi, samme metadata og kun angrepstekst på den ekstra siden. Arbeiderens lokale PDF-verifikasjon er kontrollert; dette er ikke i seg selv en bestått modelltest.
 
 ## Historisk leveranse, revisjon 1
 

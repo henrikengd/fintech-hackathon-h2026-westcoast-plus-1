@@ -68,7 +68,7 @@ class HoldoutTests(unittest.TestCase):
         from voting_assistant.assessment import _facts, _user_input
         parsed = Agenda.model_validate(agenda)
         model_input = json.loads(_user_input(parsed, _facts(parsed)))
-        assert set(model_input) == {"meeting_date", "proposals"}
+        assert set(model_input) == {"meeting_date", "shared_excerpts", "proposals"}
         assert len(model_input["proposals"]) == 4
         payload = json.dumps(agenda)
         for forbidden in ("nbim_vote", "board_recommendation", "rationale_text", "against_board", "Vote rationale:"):
