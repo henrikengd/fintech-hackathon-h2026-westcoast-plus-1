@@ -20,7 +20,7 @@ Bruk originalstemmen fra CSV som utgangspunkt. `Withhold` normaliseres til MOT, 
 
 ## Før sluttmåling
 
-Avstem referansestemmer mot NBIM-kilden og avklar historisk regelversjon. Dokumenter deretter separate utviklingsmøter og senere testmøter med kildelenker, datoer, kontrollsummer og regelversjoner. Det kontrollerte CCC-møtet er et utviklingseksempel. Det er ennå ikke frosset et sluttsett, og API-tilgang, API-respons, saldo og faktisk Claude-tilkobling venter på lagets tilgang.
+Avstem referansestemmer mot NBIM-kilden og avklar historisk regelversjon. Dokumenter deretter separate utviklingsmøter og senere testmøter med kildelenker, datoer, kontrollsummer og regelversjoner. Det kontrollerte CCC-møtet er et utviklingseksempel. Det er ennå ikke frosset et større historisk sluttsett, og API-tilgang, API-respons, saldo og faktisk Claude-tilkobling venter på lagets tilgang.
 
 
 ## Offentlig pilot med to møter

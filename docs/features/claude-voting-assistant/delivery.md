@@ -29,4 +29,10 @@ T-04 og T-06 ble delt i kode som kunne bygges mot avtalte kontrakter og akseptan
 
 Sett inn lagets NBIM- og Anthropic-nøkler i lokal `.env` før live-verifikasjon. For API-evalueringen må også modell-ID og gjeldende tokenpriser være satt. Kontroller historisk anvendelse av regelversjonen, kjør den dokumenterte piloten og en kontrollert original-/angrepsvariant, og avstem kildene manuelt. Kjør deretter en faktisk Claude-samtale med PDF og MCP over HTTPS.
 
-Status for uavhengig gjennomgang og PR føres nedenfor etter verifikasjon.
+## Gjennomgang
+
+Tre uavhengige gjennomganger dekket korrekthet, spesifikasjon og standarder for `048c75c`. Gjennomgangen fant at indeksen kunne overskrive en kilde, at forslag kunne mangle i delrapporter og at et tomt søk kunne ende med anbefaling. Den påpekte også manglende låsing av pilotens regelkilde, avvik i søkegrenser og at CCC-eksemplet kun egner seg til kontroll av saksliste og manuell sjekk.
+
+`594cb08` retter feilhåndteringen, låser kildehashen, samordner søkegrensene og dokumenterer CCC. De tre gjennomgangene kontrollerte rettingene. Ren installasjon, 34 tester, MCP over lokal HTTP og evalueringsflyten med simulert Anthropic-transport passerte på `594cb08`.
+
+Koden kan vurderes i en PR. Full leveranse avventer lagets live-verifikasjon. Hovedoppgaven forblir åpen.
