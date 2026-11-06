@@ -1443,4 +1443,5 @@ if __name__ == "__main__":
     elif stage[0] in ("sealed", "agent_sealed"):
         globals()[stage[0]]()
     else:
+        print("Recomputing the results from saved files. This takes a few minutes, so let it finish.", flush=True)
         show(report())

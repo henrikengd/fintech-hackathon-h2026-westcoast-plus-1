@@ -12,7 +12,7 @@ Python 3.12 or newer on Windows x64, Apple silicon or Linux x64 (`python3` on Ma
 python app.py
 ```
 
-The first start sets itself up and takes up to four minutes. Drop a filing, for example `data/meetings/us/BRCB_2026_05_27.htm`. The Claude key is in `.env`.
+The first start can take a few minutes, up to about four, because it installs everything into a local `.venv` and loads the vote record. Later starts take about half a minute. When the page opens, drop a filing, for example `data/meetings/us/BRCB_2026_05_27.htm`. The Claude key is in `.env`.
 
 Plugin, no key: unzip this folder, then upload the zip for your system from `plugin/` in Claude. Your own Claude drafts one pass, which is not the tested setup.
 
@@ -22,6 +22,8 @@ To reproduce the numbers, with no key:
 python run.py
 ```
 
+This recomputes every figure from the saved results and takes about six minutes. Let it finish.
+
 ## How it decides
 
 1. Claude reads the agenda and writes three drafts from NBIM's guidelines and the company's earlier votes.
@@ -29,7 +31,7 @@ python run.py
 3. Python checks every quote. If the drafts disagree, a check fails, or the score is at or above 0.22, a person reads it.
 4. The rest is signed off in a batch, with a spot check.
 
-The 0.22 threshold is where about 90% of votes against the board lay above the cut in 2024 and 2025, at about 1,000 other companies. It is the stewardship team's choice.
+The threshold 0.22 decides what a person reads. We set it before the test: about 90% of votes against the board scored above it in 2024 and 2025, at about 1,000 other companies. The stewardship team can change it.
 
 ## Result
 
@@ -43,7 +45,7 @@ We locked the system and ran it once on 1,000 meetings from 2026, at 751 compani
 
 On MOT votes, precision is 40.3% and recall 54.7%, against 59.7% and 9.2% for following the board.
 
-Our own local history model matches the system on routing when history stops on 1 January, 48.5% against 48.4%. It gives no vote, reason or quote, which is what Claude adds. Henrik's local model did worse, 44.7% at equal reach. Eleven other ideas failed tests written beforehand, and `results/metrics.json` lists them.
+A simple local model we built decides who reads what about as well as our system, 48.5% against 48.4% in the batch with history stopped on 1 January. It writes no vote, reason or quote. That is what Claude adds. Henrik's local model did worse, 44.7% when the same share of votes reach a person. Eleven other ideas failed tests written beforehand, and `results/metrics.json` lists them.
 
 The agent followed a planted instruction in none of 20 filings. Indirect wording passes our scan.
 
@@ -53,9 +55,9 @@ Method: this file and `Kravrespons.pdf`. Evaluation: `results/metrics.json`, `py
 
 ## Limits
 
-The lane is weak after June, 14 of 63 right. Auditor proposals are weak, 20 of 32 reached. The test read ballot text, so document reading is not evaluated. 73 of 79 rules use today's text at every date. Claude may have seen NBIM's votes, which we cannot rule out. Details are in `results/metrics.json`.
+When the agent proposes against the board, it is weak after June, 14 of 63 right. Auditor proposals are weak, 20 of 32 reached. The test read ballot text, so document reading is not evaluated. 73 of 79 rules use today's text at every date. Claude may have seen NBIM's votes, which we cannot rule out. Details are in `results/metrics.json`.
 
-After the sealed run we changed labels, messages and live-path fixes, and no sealed lane moved, so some code differs from `results/freeze_v3.json`. `desk.py` and `rules.json` match it. The history model was built after the run, and its comparison column was removed from `results/items_sealed.csv`.
+After the test we changed labels, messages and fixes on the website. No test result changed, but some code differs from `results/freeze_v3.json`. `desk.py` and `rules.json` match it. The history model was built after the run, and its comparison column was removed from `results/items_sealed.csv`.
 
 ## One more week
 
