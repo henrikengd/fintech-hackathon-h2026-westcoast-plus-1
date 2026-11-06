@@ -57,6 +57,7 @@ def pack():
     dist = desk.ROOT / "dist"
     dist.mkdir(exist_ok=True)
     code = ["boot.py", "agent.py", "desk.py", "review.py", "sheet.py", "rules.json", "requirements.txt"]
+    code += [str(f.relative_to(desk.ROOT)) for f in sorted((desk.ROOT / "assets").rglob("*")) if f.is_file()]
     saved = ["freeze.json", "confidence.json", "screen.joblib"]
     server = json.loads((source / ".mcp.json").read_text(encoding="utf-8"))
     for name, command in (("voting-desk-plugin.zip", "python"), ("voting-desk-plugin-mac.zip", "python3")):

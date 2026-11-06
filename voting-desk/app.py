@@ -14,6 +14,7 @@ import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from html import unescape
 from urllib.parse import unquote
 
 import review
@@ -22,24 +23,29 @@ import sheet
 PORT = 8501
 LIMIT = 40_000_000
 TYPES = (".pdf", ".htm", ".html", ".txt")
-PAGE = sheet.page("Voting Desk", """<header><div class=wrap><h1>Voting Desk</h1>
-<p>Drop a general meeting agenda or proxy statement. Every proposal gets a proposed vote, a confidence and the guideline behind it.</p></div></header>
+UPLOAD = """<header class=wrap>
+  <p class=eyebrow>Legg til data</p>
+  <h1>Voting Desk</h1>
+  <p class=lead>Drop a general meeting agenda or proxy statement. Every proposal gets a proposed vote, a confidence and the guideline behind it.</p>
+</header>
 <main class=wrap>
-<div id=drop tabindex=0><b>Drop a file here</b><br>or click to choose. PDF, HTML or text.<input id=file type=file accept=".pdf,.htm,.html,.txt" hidden></div>
-<p><textarea id=text rows=5 placeholder="Or paste an agenda"></textarea></p>
-<p><label><input id=research type=checkbox checked> Agent: Claude searches the filing for facts before it drafts. Untick for the three-pass method evaluated on the holdout.</label></p>
-<p id=keyline><label>Anthropic API key <input id=key type=password autocomplete=off></label> Kept in memory on this computer.</p>
-<p><button id=go>Review pasted agenda</button> <span id=status role=status></span></p>
-<h2>Reviews from the test period</h2><p>SAMPLES</p>
-</main>
-<style>
-#drop{border:1px dashed var(--line);background:var(--sky);padding:64px 24px;text-align:center;cursor:pointer;margin-top:32px}
-#drop.over{background:var(--polar);border-color:var(--blue)}
-textarea,#key{width:100%;font:inherit;padding:12px;border:1px solid var(--line);color:inherit}#key{max-width:420px;display:block;margin-top:4px}
-button{background:var(--midnight);color:#fff;border:0;border-radius:50px;padding:12px 24px;font:inherit;font-weight:400;cursor:pointer}
-button:disabled{opacity:.5;cursor:wait}
-</style>
-<script>
+  <div class=upload>
+    <div class=drop id=drop tabindex=0>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <strong>Drop a file here</strong><span>or click to choose. PDF, HTML or text.</span>
+      <input id=file type=file accept=".pdf,.htm,.html,.txt" hidden>
+    </div>
+    <textarea id=text placeholder="Or paste an agenda" aria-label="Agenda text"></textarea>
+    <p id=keyline class=keyline><label>Anthropic API key <input id=key type=password autocomplete=off></label> Kept in memory on this computer.</p>
+    <label class=agent><input id=research type=checkbox checked><span>Agent: Claude searches the filing for facts before it drafts. Untick for the three-pass method evaluated on the holdout.</span></label>
+    <p class=go><button class="btn primary" id=go type=button>Review pasted agenda</button><span id=status role=status></span></p>
+  </div>
+  <section>
+    <h2>Previous reports</h2>
+    <div class=tiles>SAMPLES</div>
+  </section>
+</main>"""
+SCRIPT = """<script>
 const $ = id => document.getElementById(id), go = $('go'), status = $('status');
 async function send(body, name) {
   go.disabled = true; status.textContent = 'Reading the document. This takes about a minute.';
@@ -53,14 +59,16 @@ async function send(body, name) {
 }
 const take = f => f && send(f, f.name);
 $('drop').onclick = () => $('file').click();
+$('drop').onkeydown = e => (e.key === 'Enter' || e.key === ' ') && $('file').click();
 $('file').onchange = e => take(e.target.files[0]);
 $('drop').ondragover = e => { e.preventDefault(); $('drop').classList.add('over'); };
 $('drop').ondragleave = () => $('drop').classList.remove('over');
 $('drop').ondrop = e => { e.preventDefault(); $('drop').classList.remove('over'); take(e.dataTransfer.files[0]); };
 go.onclick = () => $('text').value.trim() ? send($('text').value, 'pasted.txt') : status.textContent = 'Paste an agenda first.';
-</script>""")
+</script>"""
 
-CONTROLS = """<div class=wrap id=sign><h2>Sign-off</h2><p><label>Your name <input id=who></label>
+# Sign-off for sheets made before the dark design, which use table rows.
+OLD_CONTROLS = """<div class=wrap id=sign><h2>Sign-off</h2><p><label>Your name <input id=who></label>
 <button id=batch>Approve With board batch</button> <a href="/">New document</a> <span id=done role=status></span></p></div>
 <style>#sign input,td select,td input{font:inherit;padding:4px 8px;border:1px solid var(--line)}
 button{background:var(--midnight);color:#fff;border:0;border-radius:50px;padding:6px 16px;font:inherit;cursor:pointer}
@@ -81,11 +89,51 @@ document.querySelectorAll('tr[data-item]').forEach(row => {
 });
 document.getElementById('batch').onclick = () => log('with board batch', 'approve with board batch', '', done);
 </script>"""
+CONTROLS = """<script>
+(() => {
+const main = document.querySelector('main'), bar = document.querySelector('.bar-head');
+const sign = document.createElement('div');
+sign.className = 'sign';
+sign.innerHTML = '<label>Your name <input type=text id=who></label><button class=btn id=batch type=button>Approve With board batch</button><span id=done role=status></span>';
+bar.after(sign);
+const who = document.getElementById('who'), done = document.getElementById('done');
+async function log(item, decision, reason, mark) {
+  if (!who.value.trim()) { done.textContent = 'Enter your name first.'; who.focus(); return; }
+  const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item, decision, reviewer: who.value, reason})});
+  mark.textContent = r.ok ? 'Logged' : 'Not logged';
+}
+document.querySelectorAll('details.prop').forEach(row => {
+  const box = document.createElement('div'), pick = document.createElement('select'), note = document.createElement('input'), b = document.createElement('button');
+  box.className = 'act'; ['FOR', 'MOT', 'AVSTÅ'].forEach(v => pick.add(new Option(v, v, false, v === row.dataset.vote)));
+  pick.setAttribute('aria-label', 'Decision'); note.type = 'text'; note.placeholder = 'Reason, if you change it';
+  b.className = 'btn primary'; b.type = 'button'; b.textContent = 'Log';
+  b.onclick = () => log(row.dataset.item, pick.value, note.value, b);
+  box.append(pick, note, b); row.querySelector('.body').append(box);
+});
+document.getElementById('batch').onclick = () => log('with board batch', 'approve with board batch', '', done);
+})();
+</script>"""
+
+
+def old_sheet(html):
+    """Company, country, date and counts from a sheet made before the dark design."""
+    name, country, day = (re.search(p, html) for p in (r"<h1>(.*?)</h1>", r"Country:</b> ([^<]*)", r"Meeting date:</b> ([^<]*)"))
+    figures = dict((k, int(v)) for v, k in re.findall(r"<div><strong>(\d+)</strong>([a-z ]+)</div>", html))
+    if not (name and day):
+        return None
+    return {"company": unescape(name.group(1)), "country": unescape(country.group(1)) if country else "", "meeting_date": day.group(1),
+            "counts": {"against": figures.get("against the board", 0), "unclear": figures.get("unclear", 0), "with": figures.get("with the board", 0)}}
 
 
 def samples():
-    files = sorted((review.OUT / "sheets").glob("holdout_*.html"))
-    return " · ".join(f'<a href="/sheet/{f.name}">{f.stem[8:].replace("_", " ").strip()}</a>' for f in files)
+    files = sorted((review.OUT / "sheets").glob("*.html"), key=lambda f: f.stat().st_mtime, reverse=True)
+    tiles = []
+    for f in files:
+        html = f.read_text(encoding="utf-8")
+        data = sheet.sheet_data(html) or old_sheet(html)
+        if data:
+            tiles.append(sheet.tile(data, f"/sheet/{f.name}"))
+    return "".join(tiles) or "<p>No reports yet.</p>"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -105,12 +153,14 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/":
-            page = PAGE.replace("SAMPLES", samples())
-            return self.send(200, re.sub(r"<p id=keyline>.*?</p>\n", "", page, flags=re.S) if os.getenv("ANTHROPIC_API_KEY", "").strip() else page)
+            page = sheet.dark_page("Voting Desk", UPLOAD.replace("SAMPLES", samples()), SCRIPT)
+            return self.send(200, re.sub(r"<p id=keyline.*?</p>\n", "", page, flags=re.S) if os.getenv("ANTHROPIC_API_KEY", "").strip() else page)
         if self.path.startswith("/sheet/"):
             path = review.OUT / "sheets" / Path(unquote(self.path[7:])).name
             if path.suffix == ".html" and path.is_file():
-                return self.send(200, path.read_text(encoding="utf-8").replace("</body>", CONTROLS + "</body>"))
+                html = path.read_text(encoding="utf-8")
+                controls = CONTROLS if sheet.sheet_data(html) else OLD_CONTROLS
+                return self.send(200, html.replace("</body>", controls + "</body>"))
         self.send(404, "Not found")
 
     def do_POST(self):

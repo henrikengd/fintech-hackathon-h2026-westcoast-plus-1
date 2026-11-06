@@ -39,7 +39,8 @@ The website's agent searches the filing and is the default. Untick it for the th
 | `review.py` | Live review and the plugin's tools |
 | `app.py` | Drop-a-file page |
 | `boot.py` | Sets up the environment on first run |
-| `sheet.py` | Review sheet |
+| `sheet.py` | Review sheet, filled into the design in `assets/` |
+| `assets/` | Page design in NBIM's dark style: `style.css`, `report.js`, NBIM logo and company logos |
 | `run.py` | Evaluation stages and metrics |
 | `report.py` | One-page requirements response. Print the HTML from a browser for the PDF |
 | `rules.json` | NBIM guideline rules with dates |

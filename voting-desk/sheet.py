@@ -1,11 +1,15 @@
-"""Single-file HTML review sheet in the column order of NBIM's voting records. Read-only: decisions go through log_decision."""
+"""Single-file HTML review sheet in NBIM's dark style. Read-only: decisions go through log_decision.
+
+The page design lives in assets/ (style.css, report.js, logos). This module fills it with data, so every sheet stays one file.
+"""
+import base64
 import json
+import re
 from hashlib import sha256
 from html import escape
 
-from desk import AGAINST, MODEL, EFFORT, PROMPT_HASH, ROOT, RULES, UNCLEAR, WITH
+from desk import AGAINST, ROOT, RULES, UNCLEAR, WITH, rules_in_force
 
-GUIDELINES = RULES["source"]
 CALIBRATION = ROOT / "results" / "confidence.json"
 SCREEN_FLAG = "similar to past votes against the board"
 SCREEN_TEXT = "wording resembles proposals NBIM has opposed at other companies"
@@ -90,53 +94,135 @@ def clean(value):
     return "" if value is None or str(value) in ("nan", "None", "") else str(value)
 
 
-def row_html(r):
-    lane, why, rule, section = r["lane"], clean(r.get("why")), clean(r.get("rule")), clean(r.get("section"))
-    needs = "Person" if lane != WITH else "Audit" if audit(r["meeting_id"], r["item"]) else "Batch"
-    tag = f'<span class="tag{" against" if lane == AGAINST else ""}">{lane}</span>'
-    if rule:
-        basis = f'<a href="{GUIDELINES}">Global Voting Guidelines {escape(section)}</a>' + ("" if r.get("cited") else ", quote not verified")
-    else:
-        basis = f'<a href="{GUIDELINES}">Global Voting Guidelines</a>, starting point: support the board'
-    detail = ""
-    if rule:
-        detail += f"<blockquote>{escape(clean(r.get('quote')))}</blockquote>"
-    if clean(r.get("evidence")):
-        detail += f"<blockquote>From the filing: {escape(clean(r['evidence']))}</blockquote>"
-    if clean(r.get("flags")):
-        detail += f"<div class=note><span>Sent to a person:</span> {escape(clean(r['flags']).replace(SCREEN_FLAG, SCREEN_TEXT))}</div>"
-    template = RULES["templates"].get(section)
-    if template and lane == AGAINST:
-        paper = PAPERS.get(section)
-        link = f' <a href="{paper[1]}">Position paper: {escape(paper[0])}</a>.' if paper else ""
-        detail += f"<div class=note><b>Vote rationale:</b> {escape(template)}{link}</div>"
-    fold = f"<details><summary>Reason and source</summary>{detail}</details>" if detail else ""
-    check = f'<div class=note><span>Check:</span> {escape(clean(r.get("fact")))}</div>' if clean(r.get("fact")) and lane != WITH else ""
-    return (f'<tr data-item="{escape(str(r["item"]))}" data-vote="{escape(clean(r["draft"]))}"{" class=unclear" if lane == UNCLEAR else ""}>'
-            f'<td>{escape(str(r["item"]))}</td><td>{tag}<div>{escape(str(r["proposal_text"]))}</div>'
-            f'<div class=note><span>Draft reason:</span> {escape(why)}</div><div class=note><span>Basis:</span> {basis}</div>{check}{fold}</td>'
-            f'<td>{escape(clean(r["mgmt_rec"])) or "Not stated"}</td><td class=vote>{escape(clean(r["draft"]))}</td>'
-            f'<td>{band(score(r))} {score(r)} %</td><td>{needs}</td></tr>')
+# Dark NBIM style pages ---------------------------------------------------------
+ASSETS = ROOT / "assets"
+LANE_KEY = {AGAINST: "against", UNCLEAR: "unclear", WITH: "with"}
+FLAGS = "https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/flags/4x3/{}.svg"
+ISO = {"Australia": "au", "Belgium": "be", "Bermuda": "bm", "Brazil": "br", "British Virgin Islands": "vg", "Canada": "ca",
+       "Cayman Islands": "ky", "Chile": "cl", "China": "cn", "Colombia": "co", "Denmark": "dk", "Egypt": "eg", "Finland": "fi",
+       "France": "fr", "Germany": "de", "Hong Kong": "hk", "India": "in", "Indonesia": "id", "Ireland": "ie", "Italy": "it",
+       "Japan": "jp", "Jersey": "je", "Kuwait": "kw", "Latvia": "lv", "Luxembourg": "lu", "Malaysia": "my", "Mexico": "mx",
+       "Netherlands": "nl", "Norway": "no", "Poland": "pl", "Singapore": "sg", "South Africa": "za", "South Korea": "kr",
+       "Spain": "es", "Sri Lanka": "lk", "Sweden": "se", "Switzerland": "ch", "Taiwan": "tw", "Thailand": "th",
+       "United Arab Emirates": "ae", "United Kingdom": "gb", "United States": "us", "Vietnam": "vn"}
+SUFFIX = re.compile(r"\b(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|ag|asa|ab|sa|nv|holdings?|group)\b")
+NAV = """<nav class=nav aria-label="Account">
+  <button class=lang type=button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg><span>Norsk</span></button>
+  <a class=newreport href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New report</a>
+  <span class=avatar aria-label="Profile" role="img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></svg></span>
+</nav>"""
+
+
+def asset(name):
+    return (ASSETS / name).read_text(encoding="utf-8")
+
+
+def data_uri(path, kind):
+    return f"data:{kind};base64," + base64.b64encode(path.read_bytes()).decode()
+
+
+def flag(country):
+    code = ISO.get(str(country))
+    return f'<img class=flag src="{FLAGS.format(code)}" alt="">' if code else ""
+
+
+def logo(company):
+    """A logo in assets/logos, named by the cleaned company name, or None."""
+    name = " ".join(SUFFIX.sub(" ", re.sub(r"[^a-z0-9 ]", " ", str(company).lower())).split())
+    path = ASSETS / "logos" / f"{name.replace(' ', '-')}.png"
+    return data_uri(path, "image/png") if path.is_file() else None
+
+
+def dark_page(title, body, script=""):
+    bar = f'<div class=topbar><div class=bar><img class=logo src="{data_uri(ASSETS / "nbim-logo.svg", "image/svg+xml")}" alt="Norges Bank Investment Management">{NAV}</div></div>'
+    return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            f"<title>{escape(title)}</title>{HEAD.replace('300;400;500', '400;500;600')}<style>{asset('style.css')}</style></head>"
+            f"<body>{bar}{body}{script}</body></html>")
+
+
+def sections(day):
+    """Full text of each guideline section in force on the meeting date, for Read more."""
+    out = {}
+    for r in rules_in_force(day):
+        part = out.setdefault(r["section"], {"heading": r["heading"], "quotes": []})
+        if r["quote"] not in part["quotes"]:
+            part["quotes"].append(r["quote"])
+    return {k: {"heading": v["heading"], "text": " ".join(v["quotes"])} for k, v in out.items()}
+
+
+def review(r):
+    if r["lane"] != WITH:
+        return "Person"
+    return "Audit" if audit(r["meeting_id"], r["item"]) else "Batch"
+
+
+def item(r):
+    lane, section = r["lane"], clean(r.get("section"))
+    rule = clean(r.get("rule"))
+    template = RULES["templates"].get(section) if lane == AGAINST else None
+    paper = PAPERS.get(section) if template else None
+    return {"item": str(r["item"]), "lane": LANE_KEY[lane], "text": str(r["proposal_text"]), "board": clean(r.get("mgmt_rec")),
+            "vote": clean(r.get("draft")), "score": score(r), "review": review(r), "why": clean(r.get("why")),
+            "section": section if rule else "", "quote": clean(r.get("quote")) if rule else "", "cited": str(r.get("cited")) == "True",
+            "evidence": clean(r.get("evidence")), "check": clean(r.get("fact")),
+            "flags": clean(r.get("flags")).replace(SCREEN_FLAG, SCREEN_TEXT), "rationale": template or "", "paper": list(paper) if paper else None}
+
+
+def counts(items):
+    return {k: sum(i["lane"] == k for i in items) for k in ("against", "unclear", "with")}
 
 
 def review_sheet(frame, cost=None, drafted_by=None):
-    """One meeting. `frame` is the output of desk.decide_all."""
+    """One meeting. `frame` is the output of desk.decide_all. The page is drawn by assets/report.js from the embedded data."""
     first = frame.iloc[0]
-    n = len(frame)
-    lanes = frame["lane"].value_counts()
-    figures = [(n, "proposals"), (lanes.get(AGAINST, 0), "against the board"), (lanes.get(UNCLEAR, 0), "unclear"), (lanes.get(WITH, 0), "with the board")]
-    fig = "".join(f"<div><strong>{v}</strong>{k}</div>" for v, k in figures)
-    rows = "".join(row_html(r) for r in frame.to_dict("records"))
-    spent = f" Cost ${cost:.3f}." if cost is not None else ""
-    made = f"Drafted by {drafted_by}, which is not the evaluated setup." if drafted_by else f"Model {MODEL}, effort {EFFORT}, prompt {PROMPT_HASH}."
-    record = f"<p><b>Vote record used:</b> {escape(str(first['record']))}</p>" if "record" in frame else ""
-    history = (f"<details><summary>NBIM's earlier votes at this company</summary><pre>{escape(str(first['history']))}</pre></details>"
-               if "history" in frame else "")
-    body = f"""<header><div class=wrap><h1>{escape(str(first['company']))}</h1>
-<p><b>Country:</b> {escape(str(first['country']))}</p><p><b>Meeting date:</b> {escape(str(first['meeting_date']))}</p>
-{record}</div></header>
-<main class=wrap data-company="{escape(str(first['company']), quote=True)}" data-date="{escape(str(first['meeting_date']), quote=True)}"><div class=figures>{fig}</div>
-<table><thead><tr><th>#</th><th>Proposal</th><th>Mgt rec</th><th>Proposed vote</th><th>Confidence</th><th>Review</th></tr></thead><tbody>{rows}</tbody></table>
-{history}<p class=note>Nothing is published before a stewardship manager has signed off. A verified quote shows that the rule exists and was in force, not that it applies.</p></main>
-<footer><div class=wrap>{made}{spent} Sources: company documents and NBIM's published guidelines and votes. This page is not investment advice.</div></footer>"""
-    return page(f"Review sheet, {first['company']}", body)
+    items = [item(r) for r in frame.to_dict("records")]
+    day = str(first["meeting_date"])
+    data = {"company": str(first["company"]), "country": clean(first.get("country")), "meeting_date": day,
+            "items": items, "sections": sections(day), "counts": counts(items), "drafted_by": drafted_by or ""}
+    info = [f"<li>Country: {escape(data['country'] or 'Not stated')} {flag(data['country'])}</li>"]
+    if "record" in frame:
+        info.append(f"<li>Vote record: {escape(str(first['record']))}</li>")
+    if drafted_by:
+        info.append(f"<li>Drafted by {escape(drafted_by)}, which is not the evaluated setup</li>")
+    history = (f'<section><details class=history><summary>NBIM\'s earlier votes at this company</summary><pre>{escape(str(first["history"]))}</pre></details></section>'
+               if "history" in frame and clean(first.get("history")) else "")
+    body = f"""<header class=wrap>
+  <p class=eyebrow>Stemmegivningsrapport</p>
+  <h1>{escape(data['company'])}</h1>
+  <ul class=info>{''.join(info)}</ul>
+  <p class=meeting>General meeting {escape(day)}</p>
+  <div class=overview>
+    <div class="summary total" id=total></div>
+    <div class=summary><div class=lanes id=lanes></div><div class=split id=split aria-hidden="true"></div></div>
+  </div>
+</header>
+<main class=wrap data-company="{escape(data['company'], quote=True)}" data-date="{escape(day, quote=True)}">
+  <section>
+    <div class=bar-head><h2>Proposals</h2><div class=seg id=filters role=group aria-label="Show proposals"></div></div>
+    <div class=cols aria-hidden="true"><span>#</span><span>Proposal</span><span>Board</span><span>Proposed</span><span>Confidence</span><span>Review</span><span></span></div>
+    <div id=list></div>
+    <div class=tools><button id=toggle type=button>Open all</button></div>
+  </section>
+  {history}
+</main>"""
+    payload = json.dumps(data, ensure_ascii=False, default=str).replace("</", "<\\/")
+    script = f'<script id=data type="application/json">{payload}</script><script>{asset("report.js")}</script>'
+    return dark_page(f"Review sheet, {data['company']}", body, script)
+
+
+def sheet_data(html):
+    """The data a sheet was drawn from, or None for sheets from before this design."""
+    found = re.search(r'<script id=data type="application/json">(.*?)</script>', html, re.S)
+    return json.loads(found.group(1).replace("<\\/", "</")) if found else None
+
+
+def tile(data, href):
+    """One earlier report on the upload page."""
+    c = data.get("counts", {})
+    total = sum(c.values())
+    mark = logo(data["company"])
+    picture = f'<img src="{mark}" alt="{escape(data["company"], quote=True)}">' if mark else f'<span class=word>{escape(data["company"])}</span>'
+    return (f'<a class=tile href="{escape(href, quote=True)}"><h3>{escape(data["company"])}</h3>'
+            f'<p class=sub><span class=place>{escape(data.get("country") or "Country not stated")} {flag(data.get("country"))}</span><br>General meeting {escape(data["meeting_date"])}</p>'
+            f'<div class=stats><p><b>{total} proposals</b></p><p>{c.get("against", 0)} against the board</p><p>{c.get("unclear", 0)} unclear</p>'
+            f'<p>{c.get("with", 0)} with the board</p></div><div class=mark>{picture}</div></a>')
