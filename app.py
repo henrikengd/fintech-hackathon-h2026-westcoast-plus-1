@@ -37,7 +37,6 @@ UPLOAD = """<header class=wrap>
     </div>
     <textarea id=text placeholder="Or paste an agenda" aria-label="Agenda text"></textarea>
     <p id=keyline><label>Anthropic API key <input id=key type=password autocomplete=off></label> Kept in memory on this computer.</p>
-    <label class=agent><input id=research type=checkbox><span>Agent, exploratory: Claude searches the filing for facts before it drafts. Left off, the review runs three passes, the tested method.</span></label>
     <p class=go><button class="btn primary" id=go type=button>Review pasted agenda</button><span id=status role=status></span></p>
   </div>
   <section>
@@ -50,7 +49,7 @@ const $ = id => document.getElementById(id), go = $('go'), status = $('status');
 async function send(body, name) {
   go.disabled = true; status.textContent = 'Reading the document. This takes up to a minute.';
   try {
-    const reply = await fetch('/review', {method: 'POST', body, headers: {'X-Name': encodeURIComponent(name), 'X-Research': $('research').checked ? '1' : '', 'X-Key': $('key').value.trim()}});
+    const reply = await fetch('/review', {method: 'POST', body, headers: {'X-Name': encodeURIComponent(name), 'X-Key': $('key').value.trim()}});
     const data = await reply.json();
     if (data.url) return location = data.url;
     status.textContent = data.error;
