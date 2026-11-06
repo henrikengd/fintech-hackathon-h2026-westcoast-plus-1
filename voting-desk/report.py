@@ -47,7 +47,7 @@ def table(s, q):
     named = {b["method"]: b for b in s["baselines"]}
     history, lane = s["baselines_after_freeze"][0], s["against_lane"]
     rows = [("Følg styret", 0, 1, None, ""), *[(label, named[key]["recall"], named[key]["cleared"], named[key]["precision"], "")
-                                               for label, key in (("Gjenta forrige stemme", "Repeat the last vote"), ("Tidligere stemme i selskapet", "Earlier vote at company"))],
+                                               for label, key in (("Gjenta forrige stemme", "Repeat the last vote"),)],
             ("Historikkmodell, enkel og lokal", history["recall"], history["cleared"], history["precision"], ""),
             ("Voting Desk, alt til en person", s["reach_person"], s["cleared"], q["routed_precision"], " class=own"),
             ("Voting Desk, sporet Mot styret", lane["recall"], 1 - (lane["tp"] + lane["fp"]) / s["scored"], lane["precision"], " class=own")]
@@ -76,8 +76,7 @@ def page(m):
     tried, flagged, reached = planted(m)
     figures = [(pct(s["reach_person"]), f"av stemmene mot styret når en person (intervall {pct(s['reach_person_ci'][0])} til {pct(s['reach_person_ci'][1])})"),
                (pct(s["cleared"]), f"av forslagene går til samlet signering (intervall {pct(s['cleared_ci'][0])} til {pct(s['cleared_ci'][1])})"),
-               (pct(lane["precision"]), f"presisjon i sporet Mot styret (intervall {pct(s['against_lane_precision_ci'][0])} til {pct(s['against_lane_precision_ci'][1])})"),
-               (pct(high), f"av utkastene med høy konfidens var lik NBIMs stemme, mot basisraten {pct(base_rate)}")]
+               (pct(lane["precision"]), f"presisjon når agenten foreslår å stemme mot styret, og {pct(lane['recall'])} recall")]
     fig = "".join(f"<div><strong>{v}</strong>{k}</div>" for v, k in figures)
     rule = late["deciding_rule"]
     cuts = "; ".join(f"{num(r['cut'], 2)}{' (låst)' if r['frozen'] else ''} gir {pct(r['reach_person'])} og {pct(r['cleared'])}" for r in s["operating_points"]["rows"])
@@ -91,7 +90,7 @@ def page(m):
                 "Vi slår å følge styret og å gjenta forrige stemme, men ikke vår egen enkle modell på ruting. Den gir ingen stemme eller begrunnelse.")
     match, unread = late["section_match"], late["unread"]
     notes = (f"Terskelen {num(s['operating_points']['rows'][1]['cut'], 2)} på tekstmodellens risikoskår avgjør hva en person leser. Den ble satt før testen, ved om lag 90 % fangst i andre selskaper, og er teamets valg: {cuts} (når en person, samlet signering). "
-             f"MOT: presisjon {pct(mot['precision'])}, recall {pct(mot['recall'])}; å følge styret gir {pct(board['precision'])} og {pct(board['recall'])}. "
+             f"MOT: presisjon {pct(mot['precision'])}, recall {pct(mot['recall'])}; å følge styret gir {pct(board['precision'])} og {pct(board['recall'])}. Høy konfidens stemte med NBIM i {pct(high)} av tilfellene. "
              "Fasit for 2026 er fra NBIMs stemme-API, klarert med arrangøren; systemet trenger det ikke i drift.")
     fn, fy = f["not_founder"], f["founder"]
     policy = (f"Retningslinjene åpnet til og med 2025 for å støtte grunnleggere som er både styreleder og konsernsjef, og NBIM stemte mot i {fn['against']} av {fn['n']} saker uten grunnlegger og {fy['against']} av {fy['n']} med (etikettene er våre). "
@@ -114,7 +113,7 @@ body{font-size:13px;line-height:16.7px}
 .wrap{max-width:none;padding:0 26px}.band{padding:3px 26px;font-size:10.8px;line-height:13px}
 header{padding:5px 0 4px}h1{font-size:21px;line-height:25px;margin:0}header p{font-size:11.6px;line-height:14px}
 h2{font-size:15px;line-height:20px;margin:18px 0 3px}p{margin:0}
-.figures{margin:4px 0 0;gap:14px;grid-template-columns:repeat(4,1fr)}.figures div{font-size:10.6px;line-height:13px;padding-top:3px}.figures strong{font-size:21px;line-height:25px}
+.figures{margin:4px 0 0;gap:14px;grid-template-columns:repeat(3,1fr)}.figures div{font-size:10.6px;line-height:13px;padding-top:3px}.figures strong{font-size:21px;line-height:25px}
 .tables{display:grid;grid-template-columns:1.12fr 1fr;gap:12px;margin-top:5px}table{margin:0}th{padding:2px 6px;font-size:10.8px;line-height:13.6px}td{padding:1px 6px;font-size:10.8px;line-height:13.8px}tr.own td{background:var(--sand);font-weight:500}
 .small{font-size:11.5px;line-height:15px;margin-top:9px}"""
     body = f"""<header><div class=wrap><h1>Voting Desk</h1><p>Kravrespons, case 1 Stemmegivningsagenten.</p></div></header>

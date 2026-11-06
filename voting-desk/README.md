@@ -14,7 +14,7 @@ python app.py
 
 The first start sets itself up and takes up to four minutes. Drop a filing, for example `data/meetings/us/BRCB_2026_05_27.htm`. The Claude key is in `.env`.
 
-Plugin, no key: upload the zip for your system from `plugin/` in Claude. Your own Claude drafts one pass, which is not the tested setup.
+Plugin, no key: unzip this folder, then upload the zip for your system from `plugin/` in Claude. Your own Claude drafts one pass, which is not the tested setup.
 
 To reproduce the numbers, with no key:
 
@@ -37,11 +37,11 @@ We locked the system and ran it once on 1,000 meetings from 2026, at 751 compani
 
 | | Result |
 |---|---:|
-| Votes against the board that reach a person | 92.7% (89.7 to 95.2) |
-| Proposals in the batch | 48.4% (46.5 to 50.3) |
-| Against board lane, precision and recall | 46.1%, 44.5% |
-| MOT drafts, precision and recall | 40.3%, 54.7% |
-| Following the board, MOT precision and recall | 59.7%, 9.2% |
+| Votes against the board that reach a person | **92.7%** (89.7 to 95.2) |
+| Proposals signed off in a batch | **48.4%** (46.5 to 50.3) |
+| Precision and recall when the agent proposes against the board | **46.1%** and **44.5%** |
+
+On MOT votes, precision is 40.3% and recall 54.7%, against 59.7% and 9.2% for following the board.
 
 Our own local history model matches the system on routing when history stops on 1 January, 48.5% against 48.4%. It gives no vote, reason or quote, which is what Claude adds. Henrik's local model did worse, 44.7% at equal reach. Eleven other ideas failed tests written beforehand, and `results/metrics.json` lists them.
 
