@@ -68,7 +68,7 @@ function proposal(r) {
       <span class=cell><span class=lab>Board</span>${esc(r.board || "Not stated")}</span>
       <span class="cell vote"><span class=lab>Proposed</span>${esc(r.vote)}</span>
       <span class="cell conf"><span class=track><i style="width:${r.score}%"></i></span><span>${r.score}%</span></span>
-      <span class=cell><span class=lab>Review</span>${esc(r.review)}</span>
+      <span class="cell${r.review === "Person" ? " person" : ""}"><span class=lab>Review</span>${esc(r.review)}</span>
       ${chevron}
     </summary>
     <div class=body>${body}</div>
