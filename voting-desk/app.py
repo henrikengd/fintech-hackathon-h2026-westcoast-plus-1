@@ -23,24 +23,29 @@ import sheet
 PORT = 8501
 LIMIT = 40_000_000
 TYPES = (".pdf", ".htm", ".html", ".txt")
-PAGE = sheet.page("Voting Desk", """<header><div class=wrap><h1>Voting Desk</h1>
-<p>Drop a general meeting agenda or proxy statement. Every proposal gets a proposed vote, a confidence and the guideline behind it.</p></div></header>
+UPLOAD = """<header class=wrap>
+  <p class=eyebrow>Legg til data</p>
+  <h1>Voting Desk</h1>
+  <p class=lead>Drop a general meeting agenda or proxy statement. Every proposal gets a proposed vote, a confidence and the guideline behind it.</p>
+</header>
 <main class=wrap>
-<div id=drop tabindex=0><b>Drop a file here</b><br>or click to choose. PDF, HTML or text.<input id=file type=file accept=".pdf,.htm,.html,.txt" hidden></div>
-<p><textarea id=text rows=5 placeholder="Or paste an agenda"></textarea></p>
-<p><label><input id=research type=checkbox> Agent, exploratory: Claude searches the filing for facts before it drafts. Left off, the review runs three passes, the tested method.</label></p>
-<p id=keyline><label>Anthropic API key <input id=key type=password autocomplete=off></label> Kept in memory on this computer.</p>
-<p><button id=go>Review pasted agenda</button> <span id=status role=status></span></p>
-<h2>Sample reviews from the test sets, picked by a fixed seed</h2><p>SAMPLES</p>
-</main>
-<style>
-#drop{border:1px dashed var(--line);background:var(--sky);padding:64px 24px;text-align:center;cursor:pointer;margin-top:32px}
-#drop.over{background:var(--polar);border-color:var(--blue)}
-textarea,#key{width:100%;font:inherit;padding:12px;border:1px solid var(--line);color:inherit}#key{max-width:420px;display:block;margin-top:4px}
-button{background:var(--midnight);color:#fff;border:0;border-radius:50px;padding:12px 24px;font:inherit;font-weight:400;cursor:pointer}
-button:disabled{opacity:.5;cursor:wait}
-</style>
-<script>
+  <div class=upload>
+    <div class=drop id=drop tabindex=0>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <strong>Drop a file here</strong><span>or click to choose. PDF, HTML or text.</span>
+      <input id=file type=file accept=".pdf,.htm,.html,.txt" hidden>
+    </div>
+    <textarea id=text placeholder="Or paste an agenda" aria-label="Agenda text"></textarea>
+    <p id=keyline><label>Anthropic API key <input id=key type=password autocomplete=off></label> Kept in memory on this computer.</p>
+    <label class=agent><input id=research type=checkbox><span>Agent, exploratory: Claude searches the filing for facts before it drafts. Left off, the review runs three passes, the tested method.</span></label>
+    <p class=go><button class="btn primary" id=go type=button>Review pasted agenda</button><span id=status role=status></span></p>
+  </div>
+  <section>
+    <h2>Previous reports</h2>
+    <div class=tiles>SAMPLES</div>
+  </section>
+</main>"""
+SCRIPT = """<script>
 const $ = id => document.getElementById(id), go = $('go'), status = $('status');
 async function send(body, name) {
   go.disabled = true; status.textContent = 'Reading the document. This takes up to a minute.';
@@ -55,40 +60,89 @@ async function send(body, name) {
 }
 const take = f => f && send(f, f.name);
 $('drop').onclick = () => $('file').click();
+$('drop').onkeydown = e => (e.key === 'Enter' || e.key === ' ') && $('file').click();
 $('file').onchange = e => take(e.target.files[0]);
 $('drop').ondragover = e => { e.preventDefault(); $('drop').classList.add('over'); };
 $('drop').ondragleave = () => $('drop').classList.remove('over');
 $('drop').ondrop = e => { e.preventDefault(); $('drop').classList.remove('over'); take(e.dataTransfer.files[0]); };
 go.onclick = () => $('text').value.trim() ? send($('text').value, 'pasted.txt') : status.textContent = 'Paste an agenda first.';
-</script>""")
+</script>"""
 
-CONTROLS = """<div class=wrap id=sign><h2>Sign-off</h2><p><label>Your name <input id=who></label>
-<button id=batch>Approve With board batch</button> <a href="/">New document</a> <span id=done role=status></span></p></div>
-<style>#sign input,td select,td input{font:inherit;padding:4px 8px;border:1px solid var(--line)}
-button{background:var(--midnight);color:#fff;border:0;border-radius:50px;padding:6px 16px;font:inherit;cursor:pointer}
-td .act{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}td .act input{width:100%}</style>
+# Sign-off on a sheet: pick a vote in each proposal, press Log, and a dialog asks for name and reason.
+CONTROLS = """<dialog class=logbox id=logbox>
+  <form method=dialog id=logform>
+    <h3 id=logtitle>Log decision</h3>
+    <p id=logwhat></p>
+    <label>Your name <input type=text id=who autocomplete=name required></label>
+    <label>Reason <textarea id=why rows=4></textarea></label>
+    <p class=logerror id=logerror role=alert></p>
+    <div class=logbuttons><button class=btn type=button id=logcancel>Cancel</button><button class="btn primary" type=submit>Log decision</button></div>
+  </form>
+</dialog>
 <script>
-const main = document.querySelector('main'), who = document.getElementById('who'), done = document.getElementById('done');
-async function log(item, decision, reason, mark, row) {
-  if (!who.value.trim()) { done.textContent = 'Enter your name first.'; who.focus(); return; }
-  const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item, decision, reviewer: who.value, sheet: decodeURIComponent(location.pathname.split('/').pop()), reason, proposed_vote: row ? row.dataset.vote : '', lane: row ? row.dataset.lane : '', confidence: row ? row.children[4].textContent : ''})});
-  mark.textContent = r.ok ? 'Logged' : (await r.json()).error;
-}
-document.querySelectorAll('tr[data-item]').forEach(row => {
-  const cell = row.lastElementChild, box = document.createElement('div'), pick = document.createElement('select'), note = document.createElement('input'), b = document.createElement('button');
-  box.className = 'act'; ['FOR', 'MOT', 'AVSTÅ'].forEach(v => pick.add(new Option(v, v, false, v === row.dataset.vote)));
-  note.placeholder = 'Reason'; b.textContent = 'Log';
-  b.onclick = () => log(row.dataset.item, pick.value, note.value, b, row);
-  box.append(pick, b, note); cell.append(box);
-});
-document.getElementById('batch').onclick = () => log('with board batch', 'approve with board batch', '', done);
+(() => {
+  const main = document.querySelector('main'), box = document.getElementById('logbox'), form = document.getElementById('logform');
+  const who = document.getElementById('who'), why = document.getElementById('why'), error = document.getElementById('logerror');
+  const LANE = {against: 'Against board', unclear: 'Unclear', with: 'With board'};
+  const sheetName = decodeURIComponent(location.pathname.split('/').pop());
+  if (!document.querySelector('details.prop')) return;  // sheets from before this design have no sign-off here
+  let pending = null;
+  try { who.value = localStorage.getItem('reviewer') || ''; } catch {}
+
+  function ask(task) {
+    pending = task; error.textContent = ''; why.value = '';
+    document.getElementById('logtitle').textContent = task.title;
+    document.getElementById('logwhat').textContent = task.what;
+    why.required = task.needsReason; why.placeholder = task.needsReason ? 'Why you change the proposed vote' : 'Optional';
+    box.showModal(); (who.value ? why : who).focus();
+  }
+  document.getElementById('logcancel').onclick = () => box.close();
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!who.value.trim()) { error.textContent = 'Enter your name.'; return who.focus(); }
+    if (pending.needsReason && !why.value.trim()) { error.textContent = 'A changed vote needs a reason.'; return why.focus(); }
+    try { localStorage.setItem('reviewer', who.value.trim()); } catch {}
+    const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item: pending.item,
+      decision: pending.decision, reviewer: who.value.trim(), sheet: sheetName, reason: why.value.trim(), ...pending.extra})});
+    if (!r.ok) { error.textContent = (await r.json()).error; return; }
+    pending.done(); box.close();
+  });
+
+  document.querySelectorAll('details.prop').forEach(row => {
+    const act = document.createElement('div'), state = document.createElement('span');
+    act.className = 'act';
+    act.innerHTML = '<div class=seg role=group aria-label="Decision">' + ['FOR', 'MOT', 'AVSTÅ'].map(v =>
+      `<button type=button data-v="${v}" aria-pressed=${v === row.dataset.vote}>${v}</button>`).join('') + '</div><button class="btn primary" type=button>Log</button>';
+    state.className = 'logged'; state.setAttribute('role', 'status'); act.append(state);
+    const seg = act.querySelector('.seg'), log = act.querySelector('.btn');
+    seg.onclick = e => { const b = e.target.closest('button'); if (b) seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); };
+    log.onclick = () => {
+      const decision = seg.querySelector('[aria-pressed=true]').dataset.v, title = row.querySelector('.title strong').textContent;
+      ask({title: 'Log decision', what: `Proposal ${row.dataset.item}: ${title}. Decision ${decision}, proposed ${row.dataset.vote}.`,
+        item: row.dataset.item, decision, needsReason: decision !== row.dataset.vote,
+        extra: {proposed_vote: row.dataset.vote, lane: LANE[row.dataset.lane], confidence: row.dataset.score + ' %'},
+        done: () => { state.textContent = `Logged ${decision}`; }});
+    };
+    row.querySelector('.body').append(act);
+  });
+
+  const bar = document.querySelector('.bar-head'), batch = document.createElement('div');
+  batch.className = 'batch';
+  batch.innerHTML = '<button class=btn type=button>Approve With board batch</button><span class=logged role=status></span>';
+  bar.after(batch);
+  batch.querySelector('button').onclick = () => ask({title: 'Approve the batch',
+    what: `Every proposal With the board on this sheet, ${document.querySelectorAll('details.prop[data-lane=with]').length} in all, is approved as proposed.`,
+    item: 'with board batch', decision: 'approve with board batch', needsReason: false, extra: {},
+    done: () => { batch.querySelector('.logged').textContent = 'Batch approved'; }});
+})();
 </script>"""
 
 
 def samples():
-    files = sorted(f for f in (review.OUT / "sheets").glob("*.html") if f.name.startswith(review.SAMPLE_SHEETS))
-    return " · ".join(f'<a href="/sheet/{f.name}">{f.stem.split("_", 1)[1].replace("_", " ").strip()}</a>' for f in files)
-
+    """Earlier reports as tiles, newest first: live reviews and the samples picked by a fixed seed."""
+    files = sorted((review.OUT / "sheets").glob("*.html"), key=lambda f: f.stat().st_mtime, reverse=True)
+    tiles = [sheet.tile(data, f"/sheet/{f.name}") for f in files if (data := sheet.sheet_data(f.read_text(encoding="utf-8")))]
+    return "".join(tiles) or "<p>No reports yet.</p>"
 
 class Handler(BaseHTTPRequestHandler):
     def send(self, code, body, kind="text/html; charset=utf-8"):
@@ -107,7 +161,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/":
-            page = PAGE.replace("SAMPLES", samples())
+            page = sheet.dark_page("Voting Desk", UPLOAD.replace("SAMPLES", samples()), SCRIPT)
             return self.send(200, page.replace("<p id=keyline>", "<p id=keyline hidden>") if os.getenv("ANTHROPIC_API_KEY", "").strip() else page)
         if self.path.startswith("/sheet/"):
             path = review.OUT / "sheets" / Path(unquote(self.path[7:])).name

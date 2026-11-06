@@ -9,3 +9,4 @@ __pycache__/
 # Original data received from the organizer; provenance is documented separately.
 /data/raw/
 /data/index.json
+oppgave_a/

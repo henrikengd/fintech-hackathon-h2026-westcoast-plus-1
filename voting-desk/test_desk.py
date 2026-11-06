@@ -227,8 +227,9 @@ class Pay(unittest.TestCase):
         self.assertTrue(review.pay_gate(self.row(lane=desk.UNCLEAR, date=pd.Timestamp("2025-05-01")), self.model, low).iloc[0]["read_first"], "last pay vote against")
         self.assertFalse(review.pay_gate(self.row(lane=desk.UNCLEAR, cik=None), self.model, self.facts).iloc[0]["read_first"], "no facts, no order")
         r = dict(lane=desk.UNCLEAR, item="1", meeting_id="m", draft="FOR", mgmt_rec="FOR", proposal_text="x", confidence="Low", flags="", read_first=True)
-        self.assertIn("Read first", sheet.row_html(r))
-        self.assertNotIn("Read first", sheet.row_html(dict(r, read_first=False)))
+        self.assertTrue(sheet.item(r)["read_first"])
+        self.assertFalse(sheet.item(dict(r, read_first=False))["read_first"])
+        self.assertIn("Read first", sheet.asset("report.js"), "the page draws the tag")
 
     def test_read_first_never_clears_an_item_or_changes_a_vote(self):
         import review
@@ -239,7 +240,8 @@ class Pay(unittest.TestCase):
     def test_sheet_shows_the_reasons(self):
         import sheet
         r = dict(lane=desk.UNCLEAR, item="1", meeting_id="m", draft="FOR", mgmt_rec="FOR", proposal_text="x", confidence="Low", flags="", pay="CEO pay $32.4m for fiscal 2024")
-        self.assertIn("CEO pay $32.4m for fiscal 2024", sheet.row_html(r))
+        self.assertEqual(sheet.item(r)["pay"], "CEO pay $32.4m for fiscal 2024")
+        self.assertIn("Pay facts:", sheet.asset("report.js"), "the page shows the reasons")
 
     def test_saved_pay_files_hold_no_vote_from_2026(self):
         import joblib
@@ -606,22 +608,24 @@ class Sheet(unittest.TestCase):
 
     def test_with_board_rows_quote_the_starting_point(self):
         import sheet
-        self.assertIn(sheet.STARTING_POINT, sheet.row_html(self.row))
-        self.assertIn("Global voting guidelines", sheet.row_html(self.row))
-        self.assertNotIn("Global Voting Guidelines", sheet.row_html(self.row))
+        self.assertEqual(sheet.item(self.row)["basis"], sheet.STARTING_POINT)
+        self.assertIn(sheet.STARTING_POINT, sheet.asset("report.js"), "the page quotes it word for word")
+        self.assertIn("Global voting guidelines", sheet.asset("report.js"))
+        self.assertNotIn("Global Voting Guidelines", sheet.asset("report.js"))
 
     def test_a_draft_against_the_board_with_no_rule_does_not_cite_supporting_the_board(self):
         import sheet
-        page = sheet.row_html(dict(self.row, draft="MOT", lane=desk.UNCLEAR, flags="no verified citation", confidence="Low"))
-        self.assertNotIn(sheet.STARTING_POINT, page)
-        self.assertIn("No guideline rule cited", page)
-        self.assertNotIn(sheet.STARTING_POINT, sheet.row_html(dict(self.row, draft="FOR", mgmt_rec="")), "no board position, nothing to support")
+        basis = sheet.item(dict(self.row, draft="MOT", lane=desk.UNCLEAR, flags="no verified citation", confidence="Low"))["basis"]
+        self.assertNotIn(sheet.STARTING_POINT, basis)
+        self.assertIn("No guideline rule cited", basis)
+        self.assertNotIn(sheet.STARTING_POINT, sheet.item(dict(self.row, draft="FOR", mgmt_rec=""))["basis"], "no board position, nothing to support")
 
     def test_against_rows_open_the_fold(self):
         import sheet
         rule = dict(self.row, lane=desk.AGAINST, draft="MOT", rule="NBIM-1.3.1", section="1.3", quote="q", cited=True, confidence="Medium")
-        self.assertIn("<details open>", sheet.row_html(rule))
-        self.assertNotIn("<details open>", sheet.row_html(dict(rule, lane=desk.UNCLEAR)))
+        self.assertEqual(sheet.item(rule)["lane"], "against")
+        self.assertEqual(sheet.item(dict(rule, lane=desk.UNCLEAR))["lane"], "unclear")
+        self.assertIn('r.lane === "against" ? " open" : ""', sheet.asset("report.js"), "only rows against the board open")
 
 
 class Added(unittest.TestCase):

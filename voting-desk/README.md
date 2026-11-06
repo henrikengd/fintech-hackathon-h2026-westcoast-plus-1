@@ -16,6 +16,8 @@ The first start sets itself up and takes up to four minutes. Drop a filing, for 
 
 Plugin, no key: upload the zip for your system from `plugin/` in Claude. Your own Claude drafts one pass, which is not the tested setup.
 
+The pages are drawn in NBIM's dark style from `assets/`: `style.css`, `report.js`, the NBIM logo and company logos. `sheet.py` fills them with data.
+
 To reproduce the numbers, with no key:
 
 ```bash
@@ -27,7 +29,7 @@ python run.py
 1. Claude reads the agenda and writes three drafts from NBIM's guidelines and the company's earlier votes.
 2. A local text model gives each proposal a risk score.
 3. Python checks every quote. If the drafts disagree, a check fails, or the score is at or above 0.22, a person reads it.
-4. The rest is signed off in a batch, with a spot check.
+4. The rest is signed off in a batch.
 
 The 0.22 threshold is where about 90% of votes against the board lay above the cut in 2024 and 2025, at about 1,000 other companies. It is the stewardship team's choice.
 
