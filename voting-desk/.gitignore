@@ -4,6 +4,3 @@ __pycache__/
 data/edgar/
 .installing
 .install.log
-data/unseen_votes.csv
-data/meetings/
-results/raw/

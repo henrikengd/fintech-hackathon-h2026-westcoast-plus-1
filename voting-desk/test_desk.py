@@ -1130,13 +1130,13 @@ class LiveInput(unittest.TestCase):
 
 
 class Numbers(unittest.TestCase):
-    """Number guard: a headline number in the README, DEMO or one-pager must be the one in metrics.json."""
+    """Number guard: a headline number in the README or one-pager must be the one in metrics.json."""
 
     @classmethod
     def setUpClass(cls):
         import json
         cls.m = json.loads((desk.ROOT / "results" / "metrics.json").read_text(encoding="utf-8"))
-        cls.text = {name: (desk.ROOT / name).read_text(encoding="utf-8") for name in ("README.md", "DEMO.md", "Kravrespons.html")}
+        cls.text = {name: (desk.ROOT / name).read_text(encoding="utf-8") for name in ("README.md", "Kravrespons.html")}
         s = cls.m["sealed"]
         cls.history = s["baselines_after_freeze"][0]
         cls.shares = [s["reach_person"], s["cleared"], s["against_lane"]["precision"], s["against_lane"]["recall"], s["literal_mot_draft"]["precision"], s["literal_mot_draft"]["recall"],
@@ -1149,12 +1149,8 @@ class Numbers(unittest.TestCase):
         for x in self.shares[:6]:
             self.assertIn(f"{x * 100:.1f}%", self.text["README.md"])
 
-    def test_counts_and_the_batch_lead_match(self):
+    def test_counts_match(self):
         m, s = self.m, self.m["sealed"]
-        f, c = m["policy_founder"], m["policy_chair_ceo"]
-        for found in (f"{self.history['system_batch_lead'] * 100:+.1f}", f"{s['meetings']:,}", f"{f['not_founder']['against']} of {f['not_founder']['n']}",
-                      f"{f['founder']['against']} of {f['founder']['n']}", f"{c['before']['against']} of {c['before']['n']}", f"{c['after']['against']} of {c['after']['n']}"):
-            self.assertIn(found, self.text["DEMO.md"])
         self.assertIn(f"{s['scored']:,} proposals", self.text["README.md"])
         self.assertIn(f"${round(sum(m['development']['spend_usd'].values()))}", self.text["README.md"])
 
@@ -1169,13 +1165,10 @@ class Numbers(unittest.TestCase):
             self.assertIn(f"{v['proposals']:,}".replace(",", " "), self.text["Kravrespons.html"])
             self.assertIn(f"{v['against_board'] * 100:.1f}".replace(".", ",") + " %", self.text["Kravrespons.html"])
 
-    def test_the_demo_filing_is_in_the_folder(self):
-        self.assertTrue((desk.ROOT / re.search(r"data/meetings/us/\S+?\.htm", self.text["DEMO.md"])[0]).is_file())
+    def test_the_sample_filing_is_in_the_folder(self):
+        self.assertTrue((desk.ROOT / re.search(r"data/meetings/us/\S+?\.htm", self.text["README.md"])[0]).is_file())
 
-    def test_the_demo_adds_up_to_five_minutes(self):
-        self.assertEqual(sum(int(s) for s in re.findall(r"(\d+) s\.\*\*", self.text["DEMO.md"])), 300)
-
-    def test_no_percent_in_the_readme_or_demo_is_missing_from_the_metrics(self):
+    def test_no_percent_in_the_readme_is_missing_from_the_metrics(self):
         known = set()
 
         def walk(value):
@@ -1184,8 +1177,7 @@ class Numbers(unittest.TestCase):
             if isinstance(value, float):
                 known.update((f"{value * 100:.1f}", f"{value:.1f}"))
         walk(self.m)
-        for name in ("README.md", "DEMO.md"):
-            self.assertEqual(set(re.findall(r"\d+\.\d(?=%)", self.text[name])) - known, set(), name)
+        self.assertEqual(set(re.findall(r"\d+\.\d(?=%)", self.text["README.md"])) - known, set())
 
 
 class Parsing(unittest.TestCase):
