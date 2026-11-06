@@ -97,7 +97,7 @@ def page(m):
               f"Etter at «will not» ble «may not» i 2026, falt stemmene mot fra {c['before']['against']} av {c['before']['n']} til {c['after']['against']} av {c['after']['n']}. "
               "Utvalgene er små, men historikk må vektes ned når en regel endres.")
     need = (f"Vi testet {d['ideas_failed']} ideer mot krav skrevet på forhånd, og ingen besto. "
-            f"Henrik Engdals lokale modell var ikke like god, {pct(local['batch_at_equal_reach'])} til samlet signering ved lik fangst, men forskjellen er ikke bevist. "
+            f"En lokal modell vi prøvde i gruppen, var ikke like god, {pct(local['batch_at_equal_reach'])} til samlet signering ved lik fangst, men forskjellen er ikke bevist. "
             "Med én uke til ville vi hentet fakta fra innkallinger utenfor USA, testet Opus og en lokal språkmodell, og lagt til posisjonsstørrelse.")
     limits = (f"Agenten fulgte ingen plantet instruks: {reached} av {tried} nådde samlet signering i sakslisten, og {followed} av {wide['filings_complete']} innkallinger ble fulgt. "
               "Indirekte ordlyd slipper likevel forbi skanningen.")

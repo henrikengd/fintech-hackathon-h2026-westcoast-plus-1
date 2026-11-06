@@ -53,7 +53,7 @@ We locked the system and ran it once on 1,000 meetings from 2026, at 751 compani
 
 On MOT votes, precision is 40.3% and recall 54.7%, against 59.7% and 9.2% for following the board.
 
-A simple local model we built decides who reads what about as well as our system, 48.5% against 48.4% in the batch with history stopped on 1 January. It writes no vote, reason or quote. That is what Claude adds. Henrik's local model did worse, 44.7% when the same share of votes reach a person. Eleven other ideas failed tests written beforehand, and `results/metrics.json` lists them.
+A simple local model we built decides who reads what about as well as our system, 48.5% against 48.4% in the batch with history stopped on 1 January. It writes no vote, reason or quote. That is what Claude adds. A second local model we tried in the group did worse, 44.7% when the same share of votes reach a person. Eleven other ideas failed tests written beforehand, and `results/metrics.json` lists them.
 
 The agent followed a planted instruction in none of 20 filings. Indirect wording passes our scan.
 
