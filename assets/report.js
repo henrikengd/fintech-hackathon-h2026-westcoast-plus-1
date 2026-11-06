@@ -56,7 +56,7 @@ function proposal(r) {
   if (r.evidence) body += `<p><b>From the filing:</b> ${esc(r.evidence)}</p>`;
   if (r.pay) body += `<p><b>Pay facts:</b> ${esc(r.pay)}</p>`;
   if (r.check && r.lane !== "with") body += `<p><b>Check:</b> ${esc(r.check)}</p>`;
-  if (r.flags) body += `<p><b>Sent to a person:</b> ${esc(r.flags)}</p>`;
+  if (r.flags) body += `<p><b>${r.lane === "unclear" ? "Why it is unclear" : "Reason for review"}:</b> ${esc(r.flags)}</p>`;
   if (r.rationale && r.lane === "against") {
     const paper = r.paper ? ` <a href="${esc(r.paper[1])}">Position paper: ${esc(r.paper[0])}</a>.` : "";
     body += `<div class=rationale><p><b>Vote rationale:</b> ${esc(r.rationale)}${paper}</p></div>`;
@@ -90,7 +90,7 @@ function context(r) {
   if (r.evidence) lines.push(`From the filing: ${r.evidence}`);
   if (r.pay) lines.push(`Pay facts: ${r.pay}`);
   if (r.check) lines.push(`Check: ${r.check}`);
-  if (r.flags) lines.push(`Sent to a person: ${r.flags}`);
+  if (r.flags) lines.push(`${r.lane === "unclear" ? "Why it is unclear" : "Reason for review"}: ${r.flags}`);
   if (r.rationale) lines.push(`Vote rationale: ${r.rationale}`);
   if (r.paper) lines.push(`Position paper: ${r.paper[0]}, ${r.paper[1]}`);
   return lines.join("\n");
