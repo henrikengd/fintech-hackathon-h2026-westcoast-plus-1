@@ -1,0 +1,48 @@
+<!doctype html><html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Voting Desk, kravrespons</title><link rel="preconnect" href="https://fonts.gstatic.com"><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500&display=swap" rel="stylesheet"><style>
+:root{--midnight:#001538;--blue:#0026ff;--sky:#faf9f5;--sand:#f5f2eb;--band:#f4cea4;--polar:#e7f6f8;
+--muted:rgb(0 21 56/65%);--line:rgb(0 21 56/24%)}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--midnight);font:300 16px/24px "Hanken Grotesk",system-ui,sans-serif;font-variant-numeric:lining-nums tabular-nums}
+.band{background:var(--band);padding:8px 24px;font-size:14px;font-weight:400}
+.wrap{max-width:1024px;margin:auto;padding:0 24px}
+header{background:var(--sand);padding:40px 0 32px}
+h1{font-size:48px;line-height:60px;font-weight:500;letter-spacing:-.5px;margin:0 0 16px}
+h2{font-size:24px;line-height:32px;font-weight:500;margin:40px 0 12px}
+header p{margin:0}b{font-weight:500}
+.figures{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:24px;margin:32px 0}
+.figures div{border-top:1px solid var(--line);padding-top:8px;font-size:14px;color:var(--muted)}
+.figures strong{display:block;font-size:40px;line-height:52px;font-weight:500;color:var(--midnight)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--midnight);color:#fff;font-weight:500;text-align:left;padding:12px 16px}
+td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+pre{white-space:pre-wrap;font:inherit}
+tr.unclear td{background:var(--polar)}
+.tag{display:inline-block;border:1px solid var(--line);border-radius:32px;padding:0 12px;font-size:14px;font-weight:400;margin:0 8px 4px 0}
+.tag.against{border-color:var(--midnight);background:var(--midnight);color:#fff}
+.note{font-size:14px;line-height:20px;margin-top:8px}
+.note span{color:var(--muted)}
+blockquote{margin:8px 0;padding-left:12px;border-left:2px solid var(--blue);font-size:14px;line-height:20px}
+a{color:var(--blue)}
+details{font-size:14px;line-height:20px;margin-top:8px}summary{cursor:pointer}
+.vote{font-weight:500}
+footer{background:var(--sky);margin-top:48px;padding:24px 0;font-size:14px;line-height:20px;color:var(--muted)}
+@media (max-width:640px){h1{font-size:32px;line-height:40px}td,th{padding:8px}main{overflow-x:auto}}
+@media print{.band{-webkit-print-color-adjust:exact;print-color-adjust:exact}details:not([open]){display:none}}
+
+@page{size:A4;margin:0}
+body{font-size:13px;line-height:16.7px}
+.wrap{max-width:none;padding:0 26px}.band{padding:3px 26px;font-size:10.8px;line-height:13px}
+header{padding:5px 0 4px}h1{font-size:21px;line-height:25px;margin:0}header p{font-size:11.6px;line-height:14px}
+h2{font-size:15px;line-height:20px;margin:18px 0 3px}p{margin:0}
+.figures{margin:4px 0 0;gap:14px;grid-template-columns:repeat(4,1fr)}.figures div{font-size:10.6px;line-height:13px;padding-top:3px}.figures strong{font-size:21px;line-height:25px}
+.tables{display:grid;grid-template-columns:1.12fr 1fr;gap:12px;margin-top:5px}table{margin:0}th{padding:2px 6px;font-size:10.8px;line-height:13.6px}td{padding:1px 6px;font-size:10.8px;line-height:13.8px}tr.own td{background:var(--sand);font-weight:500}
+.small{font-size:11.5px;line-height:15px;margin-top:9px}</style></head><body><div class=band>Studentprototype, Westcoast + 1, FinTech Hackathon H2026. Ikke et NBIM-produkt.</div><header><div class=wrap><h1>Voting Desk</h1><p>Kravrespons, case 1 Stemmegivningsagenten.</p></div></header>
+<main class=wrap><div class=figures><div><strong>92,7 %</strong>av stemmene mot styret når en person (intervall 89,7 % til 95,2 %)</div><div><strong>48,4 %</strong>av forslagene går til samlet signering (intervall 46,5 % til 50,3 %)</div><div><strong>46,1 %</strong>presisjon i sporet Mot styret (intervall 37,8 % til 54,5 %)</div><div><strong>99,3 %</strong>av utkastene med høy konfidens var lik NBIMs stemme, mot basisraten 95,1 %</div></div>
+<h2>Hva vi bygde</h2><p>Voting Desk leser sakslisten til en generalforsamling og foreslår FOR, MOT eller AVSTÅ på hvert forslag. Beslutningen vi støtter, er hvilke forslag en stewardship manager må lese før stemmen publiseres. Agenten foreslår, koden kontrollerer, og mennesket bestemmer. Hvert utkast viser regelen det hviler på, og lav konfidens går alltid til en person.</p>
+<h2>Hvordan vi verifiserte det</h2><p>Fasit er NBIMs publiserte stemmer, og målet er om NBIM stemte annerledes enn styret. Accuracy duger ikke: å alltid følge styret gir 95,1 % og fanger ingen. Vi låste systemet og kjørte det én gang på 1 000 møter i 751 selskaper utenfor utviklingen, 454 stemmer mot styret. Vi slår å følge styret og å gjenta forrige stemme, men ikke vår egen enkle modell på ruting. Den gir ingen stemme eller begrunnelse.</p>
+<div class=tables><table><thead><tr><th>Forseglet test</th><th>Mot styret fanget</th><th>Ikke flagget</th><th>Presisjon</th></tr></thead><tbody><tr><td>Følg styret</td><td>0,0 %</td><td>100,0 %</td><td>–</td></tr><tr><td>Gjenta forrige stemme</td><td>41,9 %</td><td>95,6 %</td><td>46,3 %</td></tr><tr><td>Tidligere stemme i selskapet</td><td>77,8 %</td><td>55,5 %</td><td>8,6 %</td></tr><tr><td>Historikkmodell, enkel og lokal</td><td>92,7 %</td><td>54,9 %</td><td>10,1 %</td></tr><tr class=own><td>Voting Desk, alt til en person</td><td>92,7 %</td><td>48,4 %</td><td>8,9 %</td></tr><tr class=own><td>Voting Desk, sporet Mot styret</td><td>44,5 %</td><td>95,2 %</td><td>46,1 %</td></tr></tbody></table><table><thead><tr><th>To uavhengige syn, beregnet etter kjøringen</th><th>Forslag</th><th>NBIM mot styret</th></tr></thead><tbody><tr><td>Agenten med styret, modellen lav</td><td>4 476</td><td>0,8 %</td></tr><tr><td>Agenten med styret, modellen høy</td><td>3 796</td><td>3,4 %</td></tr><tr><td>Agenten usikker</td><td>419</td><td>13,6 %</td></tr><tr><td>Agenten mot styret, modellen lav</td><td>60</td><td>13,3 %</td></tr><tr><td>Agenten mot styret, modellen høy</td><td>467</td><td>48,4 %</td></tr></tbody></table></div><p class=small>Terskelen 0,22 på tekstmodellens risikoskår avgjør hva en person leser. Den ble satt før testen, ved om lag 90 % fangst i andre selskaper, og er teamets valg: 0,17 gir 96,3 % og 38,9 %; 0,22 (låst) gir 92,7 % og 48,4 %; 0,28 gir 90,1 % og 56,5 % (når en person, samlet signering). MOT: presisjon 40,3 %, recall 54,7 %; å følge styret gir 59,7 % og 9,2 %. Fasit for 2026 er fra NBIMs stemme-API, klarert med arrangøren; systemet trenger det ikke i drift.</p>
+<h2>Retningslinje mot praksis</h2><p>Retningslinjene åpnet til og med 2025 for å støtte grunnleggere som er både styreleder og konsernsjef, og NBIM stemte mot i 86 av 88 saker uten grunnlegger og 1 av 20 med (etikettene er våre). Etter at «will not» ble «may not» i 2026, falt stemmene mot fra 6 av 8 til 0 av 6. Utvalgene er små, men historikk må vektes ned når en regel endres.</p>
+<h2>Hva vi ville trengt videre</h2><p>Vi testet 11 ideer mot krav skrevet på forhånd, og ingen besto. Henrik Engdals lokale modell var ikke like god, 44,7 % til samlet signering ved lik fangst, men forskjellen er ikke bevist. Med én uke til ville vi hentet fakta fra innkallinger utenfor USA, testet Opus og en lokal språkmodell, og lagt til posisjonsstørrelse.</p>
+<h2>Motstandstest og begrensninger</h2><p>Agenten fulgte ingen plantet instruks: 0 av 123 nådde samlet signering i sakslisten, og 0 av 20 innkallinger ble fulgt. Indirekte ordlyd slipper likevel forbi skanningen.</p>
+<p class=small><b>Begrensninger:</b> 33 av 454 stemmer mot styret ble ikke lest. Testen leste saksteksten, ikke innkallinger. Sporet Mot styret er svakt fra juli, 14 av 63 rett. 73 av 79 regler bruker dagens tekst. Modellminne kan ikke utelukkes.</p>
+<p class=small><b>NBIMs verdier:</b> Kvalitet: én låst test. Integritet: svake tall står her. Innovasjon: test på ukjente selskaper. Lagånd: digital kollega og stewardship manager deler arbeidet.</p></main></body></html>

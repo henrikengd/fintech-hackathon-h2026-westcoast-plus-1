@@ -7,7 +7,6 @@ Runs on this computer only. The first run installs what it needs. A key comes fr
 import boot  # noqa: F401
 import json
 import os
-import re
 import sys
 import tempfile
 import threading
@@ -15,6 +14,8 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
+
+import anthropic
 
 import review
 import sheet
@@ -27,10 +28,10 @@ PAGE = sheet.page("Voting Desk", """<header><div class=wrap><h1>Voting Desk</h1>
 <main class=wrap>
 <div id=drop tabindex=0><b>Drop a file here</b><br>or click to choose. PDF, HTML or text.<input id=file type=file accept=".pdf,.htm,.html,.txt" hidden></div>
 <p><textarea id=text rows=5 placeholder="Or paste an agenda"></textarea></p>
-<p><label><input id=research type=checkbox checked> Agent: Claude searches the filing for facts before it drafts. Untick for the three-pass method evaluated on the holdout.</label></p>
+<p><label><input id=research type=checkbox> Agent, exploratory: Claude searches the filing for facts before it drafts. Left off, the review runs three passes, the tested method.</label></p>
 <p id=keyline><label>Anthropic API key <input id=key type=password autocomplete=off></label> Kept in memory on this computer.</p>
 <p><button id=go>Review pasted agenda</button> <span id=status role=status></span></p>
-<h2>Reviews from the test period</h2><p>SAMPLES</p>
+<h2>Sample reviews from the test sets, picked by a fixed seed</h2><p>SAMPLES</p>
 </main>
 <style>
 #drop{border:1px dashed var(--line);background:var(--sky);padding:64px 24px;text-align:center;cursor:pointer;margin-top:32px}
@@ -42,12 +43,13 @@ button:disabled{opacity:.5;cursor:wait}
 <script>
 const $ = id => document.getElementById(id), go = $('go'), status = $('status');
 async function send(body, name) {
-  go.disabled = true; status.textContent = 'Reading the document. This takes about a minute.';
+  go.disabled = true; status.textContent = 'Reading the document. This takes up to a minute.';
   try {
-    const reply = await fetch('/review', {method: 'POST', body, headers: {'X-Name': encodeURIComponent(name), 'X-Research': $('research').checked ? '1' : '', 'X-Key': $('key') ? $('key').value.trim() : ''}});
+    const reply = await fetch('/review', {method: 'POST', body, headers: {'X-Name': encodeURIComponent(name), 'X-Research': $('research').checked ? '1' : '', 'X-Key': $('key').value.trim()}});
     const data = await reply.json();
     if (data.url) return location = data.url;
     status.textContent = data.error;
+    if (reply.status === 401) $('keyline').hidden = false;
   } catch { status.textContent = 'That file could not be sent. It may be too large.'; }
   go.disabled = false;
 }
@@ -67,16 +69,16 @@ button{background:var(--midnight);color:#fff;border:0;border-radius:50px;padding
 td .act{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}td .act input{width:100%}</style>
 <script>
 const main = document.querySelector('main'), who = document.getElementById('who'), done = document.getElementById('done');
-async function log(item, decision, reason, mark) {
+async function log(item, decision, reason, mark, row) {
   if (!who.value.trim()) { done.textContent = 'Enter your name first.'; who.focus(); return; }
-  const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item, decision, reviewer: who.value, reason})});
-  mark.textContent = r.ok ? 'Logged' : 'Not logged';
+  const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item, decision, reviewer: who.value, sheet: decodeURIComponent(location.pathname.split('/').pop()), reason, proposed_vote: row ? row.dataset.vote : '', lane: row ? row.dataset.lane : '', confidence: row ? row.children[4].textContent : ''})});
+  mark.textContent = r.ok ? 'Logged' : (await r.json()).error;
 }
 document.querySelectorAll('tr[data-item]').forEach(row => {
   const cell = row.lastElementChild, box = document.createElement('div'), pick = document.createElement('select'), note = document.createElement('input'), b = document.createElement('button');
   box.className = 'act'; ['FOR', 'MOT', 'AVSTÅ'].forEach(v => pick.add(new Option(v, v, false, v === row.dataset.vote)));
-  note.placeholder = 'Reason, if you change it'; b.textContent = 'Log';
-  b.onclick = () => log(row.dataset.item, pick.value, note.value, b);
+  note.placeholder = 'Reason'; b.textContent = 'Log';
+  b.onclick = () => log(row.dataset.item, pick.value, note.value, b, row);
   box.append(pick, b, note); cell.append(box);
 });
 document.getElementById('batch').onclick = () => log('with board batch', 'approve with board batch', '', done);
@@ -84,8 +86,8 @@ document.getElementById('batch').onclick = () => log('with board batch', 'approv
 
 
 def samples():
-    files = sorted((review.OUT / "sheets").glob("holdout_*.html"))
-    return " · ".join(f'<a href="/sheet/{f.name}">{f.stem[8:].replace("_", " ").strip()}</a>' for f in files)
+    files = sorted(f for f in (review.OUT / "sheets").glob("*.html") if f.name.startswith(review.SAMPLE_SHEETS))
+    return " · ".join(f'<a href="/sheet/{f.name}">{f.stem.split("_", 1)[1].replace("_", " ").strip()}</a>' for f in files)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -106,7 +108,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/":
             page = PAGE.replace("SAMPLES", samples())
-            return self.send(200, re.sub(r"<p id=keyline>.*?</p>\n", "", page, flags=re.S) if os.getenv("ANTHROPIC_API_KEY", "").strip() else page)
+            return self.send(200, page.replace("<p id=keyline>", "<p id=keyline hidden>") if os.getenv("ANTHROPIC_API_KEY", "").strip() else page)
         if self.path.startswith("/sheet/"):
             path = review.OUT / "sheets" / Path(unquote(self.path[7:])).name
             if path.suffix == ".html" and path.is_file():
@@ -114,6 +116,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send(404, "Not found")
 
     def do_POST(self):
+        host, origin = self.headers.get("Host", ""), self.headers.get("Origin")
+        if host.split(":")[0] not in ("127.0.0.1", "localhost") or origin not in (None, f"http://{host}"):  # browsers send Origin on any post from another site
+            return self.reply(403, {"error": "Only this page can write here."})
         size = int(self.headers.get("Content-Length") or 0)
         if size > LIMIT:
             return self.reply(413, {"error": "That file is too large."})
@@ -135,6 +140,9 @@ class Handler(BaseHTTPRequestHandler):
             path.write_bytes(body)
             try:
                 result = review.write_review(str(path), research=bool(self.headers.get("X-Research")))
+            except anthropic.AuthenticationError:  # drop the key, so a reload shows the box too
+                os.environ.pop("ANTHROPIC_API_KEY", None)
+                return self.reply(401, {"error": "The API key was rejected. Enter a valid key above."})
             except Exception as error:  # the browser shows why, nothing is written
                 return self.reply(422, {"error": f"Could not review this document: {error}"})
         self.reply(200, {"url": "/sheet/" + Path(result["sheet"]).name})

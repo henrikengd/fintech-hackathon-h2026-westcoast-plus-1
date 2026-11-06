@@ -51,7 +51,7 @@ if __name__ == "__main__":
         LOCK.unlink(missing_ok=True)
 elif Path(sys.prefix).resolve() != ENV.resolve():
     if not READY.exists():
-        print("First run: installing, up to two minutes.", file=sys.stderr, flush=True)
+        print("First run: installing, up to four minutes.", file=sys.stderr, flush=True)
         if not LOCK.exists() or time.time() - LOCK.stat().st_mtime > 600:
             LOCK.write_text("running")
             detach()

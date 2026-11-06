@@ -1,0 +1,130 @@
+by,group,items,against,read,found,missed,lane,lane_right
+year,2026,9218,454,4752,421,33,438,202
+market,DM,3996,197,2066,184,13,173,95
+market,EM,4101,199,2094,182,17,196,76
+proposal_type,ARTICLES,361,32,330,32,0,54,12
+proposal_type,AUDITOR,647,32,81,20,12,20,14
+proposal_type,DIRECTOR_ELECTION,4032,238,2757,222,16,147,79
+proposal_type,DIRECTOR_PAY,302,2,47,2,0,3,1
+proposal_type,DISCHARGE,448,1,180,1,0,1,0
+proposal_type,DIVIDEND,450,0,61,0,0,1,0
+proposal_type,EQUITY_PLAN,271,4,75,4,0,19,3
+proposal_type,FIN_STATEMENTS,590,0,105,0,0,7,0
+proposal_type,MERGER,30,0,19,0,0,0,0
+proposal_type,OTHER_BUSINESS,28,28,28,28,0,28,28
+proposal_type,OTHER_MGMT,887,42,483,38,4,52,21
+proposal_type,ROUTINE,258,2,69,2,0,3,1
+proposal_type,RPT,121,9,59,9,0,6,4
+proposal_type,SAY_ON_PAY,399,42,347,42,0,66,22
+proposal_type,SHARE_ISSUANCE,223,14,95,13,1,23,10
+proposal_type,SHARE_REPURCHASE,165,2,10,2,0,2,1
+proposal_type,SHP_GOVERNANCE,5,5,5,5,0,5,5
+proposal_type,SHP_OTHER,1,1,1,1,0,1,1
+country,Australia,108,8,64,8,0,7,1
+country,Austria,9,1,5,1,0,2,1
+country,Bahrain,17,3,12,3,0,1,1
+country,Belgium,95,14,33,13,1,10,6
+country,Bermuda,94,6,37,4,2,9,4
+country,Brazil,176,6,76,5,1,2,1
+country,British Virgin Islands,13,0,4,0,0,0,0
+country,Canada,267,9,174,6,3,8,3
+country,Cayman Islands,191,3,76,0,3,4,0
+country,Chile,25,4,8,4,0,4,4
+country,China,946,30,411,24,6,66,16
+country,Colombia,12,0,3,0,0,0,0
+country,Denmark,64,0,31,0,0,0,0
+country,Finland,121,1,24,1,0,4,1
+country,France,365,34,228,33,1,30,21
+country,Germany,150,4,122,4,0,3,2
+country,Greece,92,2,47,1,1,8,0
+country,Hong Kong,58,0,25,0,0,3,0
+country,Hungary,15,0,6,0,0,0,0
+country,India,533,42,249,39,3,14,6
+country,Indonesia,75,13,43,13,0,19,12
+country,Ireland,145,2,64,2,0,3,1
+country,Isle of Man,16,1,5,1,0,0,0
+country,Israel,22,0,18,0,0,0,0
+country,Italy,89,1,47,1,0,13,1
+country,Japan,1177,30,552,25,5,19,15
+country,Jersey,18,1,13,1,0,0,0
+country,Kuwait,18,2,12,2,0,1,1
+country,Liechtenstein,9,0,3,0,0,0,0
+country,Luxembourg,33,1,14,1,0,2,1
+country,Malaysia,161,1,52,1,0,1,1
+country,Mexico,71,5,47,5,0,2,0
+country,Netherlands,146,4,69,4,0,7,3
+country,New Zealand,10,0,2,0,0,0,0
+country,Philippines,31,0,22,0,0,0,0
+country,Poland,309,13,175,13,0,9,0
+country,Qatar,2,1,2,1,0,0,0
+country,Singapore,87,4,18,3,1,0,0
+country,South Africa,168,0,55,0,0,7,0
+country,South Korea,522,32,337,31,1,14,8
+country,Spain,80,0,28,0,0,6,0
+country,Sweden,341,17,100,15,2,10,10
+country,Switzerland,238,54,159,54,0,40,35
+country,Taiwan,411,5,327,5,0,8,1
+country,Thailand,178,18,77,17,1,15,12
+country,Türkiye,120,8,48,7,1,3,2
+country,United Arab Emirates,66,8,34,8,0,4,4
+country,United Kingdom,206,1,33,1,0,0,0
+country,United States,1031,54,711,53,1,66,22
+country,Vietnam,87,11,50,11,0,14,6
+history,against vote at this company before,7562,415,3976,390,25,427,196
+history,no against vote at this company before,1656,39,776,31,8,11,6
+precedent,no precedent,8598,226,4145,194,32,184,52
+precedent,same person last time,160,95,160,95,0,120,70
+precedent,same type last time,460,133,447,132,1,134,80
+confidence,High,1828,35,36,32,3,36,32
+confidence,Low,4314,219,4314,219,0,0,0
+confidence,Medium,3076,200,402,170,30,402,170
+rule,NBIM-1.1.1,60,24,60,24,0,34,22
+rule,NBIM-1.1.2,18,12,18,12,0,15,10
+rule,NBIM-1.1.3,6,0,6,0,0,3,0
+rule,NBIM-1.2.1,32,24,32,24,0,22,20
+rule,NBIM-1.2.2,2,1,2,1,0,2,1
+rule,NBIM-1.2.3,9,2,9,2,0,5,2
+rule,NBIM-1.3.1,41,10,41,10,0,36,9
+rule,NBIM-1.3.3,5,5,5,5,0,4,4
+rule,NBIM-2.1.1,24,9,24,9,0,16,9
+rule,NBIM-2.3.1,6,3,6,3,0,5,3
+rule,NBIM-3.1.1,2,2,2,2,0,0,0
+rule,NBIM-3.1.2,4,1,3,1,0,1,1
+rule,NBIM-3.1.3,1,1,1,1,0,0,0
+rule,NBIM-3.1.4,1,0,1,0,0,0,0
+rule,NBIM-3.1.6,29,9,29,9,0,14,2
+rule,NBIM-3.2.1,153,1,71,1,0,0,0
+rule,NBIM-3.2.2,4,0,4,0,0,0,0
+rule,NBIM-3.2.3,4,4,4,4,0,0,0
+rule,NBIM-3.2.5,30,15,30,15,0,0,0
+rule,NBIM-3.2.8,1,0,1,0,0,0,0
+rule,NBIM-3.3.1,3,0,2,0,0,2,0
+rule,NBIM-3.3.3,86,17,86,17,0,71,17
+rule,NBIM-3.3.5,26,11,26,11,0,20,10
+rule,NBIM-4.1.2,2,0,1,0,0,0,0
+rule,NBIM-4.2.1,8,1,7,1,0,5,1
+rule,NBIM-4.2.2,5,5,5,5,0,5,5
+rule,NBIM-4.2.4,6,3,6,3,0,0,0
+rule,NBIM-4.3.1,64,20,63,20,0,54,19
+rule,NBIM-4.3.2,41,5,37,5,0,31,5
+rule,NBIM-5.1,1,0,1,0,0,0,0
+rule,NBIM-5.1.1,27,12,18,12,0,18,12
+rule,NBIM-5.1.2,2,2,2,2,0,2,2
+rule,NBIM-5.2.1,7,0,6,0,0,5,0
+rule,NBIM-5.2.2,31,29,31,29,0,31,29
+rule,NBIM-5.3.1,1,0,1,0,0,0,0
+rule,NBIM-5.3.2,6,3,6,3,0,3,3
+rule,NBIM-5.3.4,4,0,4,0,0,0,0
+rule,NBIM-5.3.5,1,0,1,0,0,0,0
+rule,NBIM-5.3.6,5,0,5,0,0,0,0
+rule,NBIM-6.1.1,5,0,5,0,0,0,0
+rule,NBIM-6.1.2,51,16,48,16,0,16,13
+rule,NBIM-6.1.3,25,0,21,0,0,10,0
+rule,NBIM-6.1.4,3,0,3,0,0,1,0
+rule,NBIM-6.2.1,1,0,1,0,0,1,0
+rule,NBIM-6.2.2,2,0,2,0,0,0,0
+rule,NBIM-6.2.3,1,1,1,1,0,1,1
+rule,NBIM-6.2.5,6,2,6,2,0,5,2
+rule,NBIM-6.2.6,7,0,1,0,0,0,0
+rule,NBIM-6.3.1,15,5,14,5,0,0,0
+rule,NBIM-6.3.2,14,1,14,1,0,0,0

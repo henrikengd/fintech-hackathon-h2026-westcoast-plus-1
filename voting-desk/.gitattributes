@@ -4,3 +4,5 @@
 /data/meetings/*.csv -text
 /data/meetings/*.html -text
 /results/freeze.json -text
+data/unseen_votes.csv -text
+results/*.csv -text

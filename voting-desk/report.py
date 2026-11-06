@@ -1,6 +1,6 @@
-"""Write the one-page requirements response and three review sheets from results/. Needs no API key.
+"""Write the one-page requirements response and the seed-picked review sheets from results/. Needs no API key.
 
-The sheets use a fixed seed over holdout meetings, so nobody picked the examples.
+Every number on the page comes from results/metrics.json. The sheets use a fixed seed, so nobody picked the examples.
 """
 import boot  # noqa: F401
 import json
@@ -8,12 +8,21 @@ import random
 
 import pandas as pd
 
+import desk
 import sheet
 from run import OUT, SEED
+
+MONTHS = "januar februar mars april mai juni juli august september oktober november desember".split()
+VIEWS = (("Agenten med styret, modellen lav", "with_board_model_low"), ("Agenten med styret, modellen høy", "with_board_model_high"), ("Agenten usikker", "unsure"),
+         ("Agenten mot styret, modellen lav", "against_model_low"), ("Agenten mot styret, modellen høy", "against_model_high"))
 
 
 def pct(x, d=1):
     return f"{x * 100:.{d}f}".replace(".", ",") + " %"
+
+
+def num(x, d=1):
+    return f"{x:.{d}f}".replace(".", ",")
 
 
 def points(x):
@@ -24,92 +33,133 @@ def tall(x):
     return f"{x:,}".replace(",", " ")
 
 
-def resistance_text(m):
+def day(iso):
+    return f"{int(iso[8:])}. {MONTHS[int(iso[5:7]) - 1]} {iso[:4]}"
+
+
+def planted(m):
+    """Attempts in the ballot text with the defences on."""
     on = [r for r in m["resistance"] if r["defences"] and r["payload"] != "control"]
-    changed = sum(r["to_for"] + r["to_avsta"] + r["omitted"] for r in on)
-    total = sum(r["items"] for r in on)
-    control = next(r for r in m["resistance"] if r["payload"] == "control")
-    return (f"Alle {total} plantede instrukser i motstandstesten ble flagget, og ingen nådde samlet signering, mens utkastet endret seg i {changed} tilfeller, på nivå med harmløs tekst ({control['to_for']} av {control['items']}).")
+    return sum(r["items"] for r in on), sum(r["flagged"] for r in on), sum(r["reached_with_board"] for r in on)
 
 
-def table(m):
-    labels = {"Follow the board": "Følg styret", "Proposal type": "Forslagstype", "Earlier vote at company": "Tidligere stemme i selskapet",
-              "Repeat the last vote": "Gjenta forrige stemme", "Text and precedent screen": "Tekstmodell med historikk",
-              "Claude, guidelines only": "Claude, bare retningslinjer", "Full system, all sent to a person": "Hele systemet, alt til en person",
-              "Full system, Against board lane only": "Hele systemet, bare sporet Mot styret"}
-    rows = ""
-    for b in m["baselines"]:
-        if b["method"] in ("Earlier vote at company", "Claude, guidelines only"):
-            continue
-        strong = ' class="own"' if b["method"].startswith("Full system") else ""
-        rows += (f"<tr{strong}><td>{labels[b['method']]}</td><td>{pct(b['recall'])}</td><td>{pct(b['cleared'])}</td>"
-                 f"<td>{pct(b['precision']) if b['precision'] else '–'}</td></tr>")
-    return ("<table><thead><tr><th>Metode, samme testperiode</th><th>Fanget av mot styret</th><th>Ikke flagget</th>"
-            f"<th>Presisjon på flagg</th></tr></thead><tbody>{rows}</tbody></table>")
+def table(s, q):
+    named = {b["method"]: b for b in s["baselines"]}
+    history, lane = s["baselines_after_freeze"][0], s["against_lane"]
+    rows = [("Følg styret", 0, 1, None, ""), *[(label, named[key]["recall"], named[key]["cleared"], named[key]["precision"], "")
+                                               for label, key in (("Gjenta forrige stemme", "Repeat the last vote"), ("Tidligere stemme i selskapet", "Earlier vote at company"))],
+            ("Historikkmodell, enkel og lokal", history["recall"], history["cleared"], history["precision"], ""),
+            ("Voting Desk, alt til en person", s["reach_person"], s["cleared"], q["routed_precision"], " class=own"),
+            ("Voting Desk, sporet Mot styret", lane["recall"], 1 - (lane["tp"] + lane["fp"]) / s["scored"], lane["precision"], " class=own")]
+    cells = "".join(f"<tr{own}><td>{name}</td><td>{pct(a)}</td><td>{pct(b)}</td><td>{pct(c) if c else '–'}</td></tr>" for name, a, b, c, own in rows)
+    return f"<table><thead><tr><th>Forseglet test</th><th>Mot styret fanget</th><th>Ikke flagget</th><th>Presisjon</th></tr></thead><tbody>{cells}</tbody></table>"
+
+
+def two_views(views):
+    cells = "".join(f"<tr><td>{name}</td><td>{tall(views[key]['proposals'])}</td><td>{pct(views[key]['against_board'])}</td></tr>" for name, key in VIEWS)
+    return f"<table><thead><tr><th>To uavhengige syn, beregnet etter kjøringen</th><th>Forslag</th><th>NBIM mot styret</th></tr></thead><tbody>{cells}</tbody></table>"
 
 
 def page(m):
-    q, p, a, ag, c = m["queue"], m["primary"], m["system"]["literal_mot_draft"], m["agent"], m["policy_chair_ceo"]
-    b = m["system"]["literal_mot_follow_board"]
-    con = m["confidence_bands"]
-    figures = [(pct(m["recall"]), f"av stemmene mot styret når en person (intervall {pct(m['recall_ci'][0], 0)} til {pct(m['recall_ci'][1], 0)})"),
-               (pct(m["cleared"]), f"av forslagene går til samlet signering (intervall {pct(m['cleared_ci'][0], 0)} til {pct(m['cleared_ci'][1], 0)})"),
-               (pct(q["against_lane_precision"], 0), f"presisjon i sporet Mot styret, mot {pct(q['screen_top_same_size_precision'], 0)} for tekstmodellen med like mange saker"),
-               (pct(con["High"]["draft_matches_nbim"]), f"av forslagene med høy konfidens fikk NBIMs stemme ({pct(con['Medium']['draft_matches_nbim'])} middels, {pct(con['Low']['draft_matches_nbim'])} lav)")]
+    s, q, d, c, f, late = m["sealed"], m["sealed_queue"], m["development"], m["policy_chair_ceo"], m["policy_founder"], m["sealed_after_run"]
+    ag, lane, mot, board = m["agent_sealed"], s["against_lane"], s["literal_mot_draft"], s["literal_mot_follow_board"]
+    history = s["baselines_after_freeze"][0]
+    base_rate = 1 - s["against"] / s["scored"]
+    high = s["confidence_bands"]["High"]["draft_matches_nbim"]
+    arms = {a["wording"]: a for a in m["document_resistance"]["arms"]}
+    wide = m["document_resistance_20"]
+    wide_arms = {a["wording"]: a for a in wide["arms"]}
+    direct, indirect, false = wide_arms["case"], wide_arms["indirect"], wide_arms["false_statement"]
+    followed = max(a["followed_filings"] for a in (direct, indirect, false))
+    x = d["after_sealed_run"]
+    local, frozen, season, rules = x["local_model"], x["frozen_history"], x["lane_by_season"], x["rule_entries"]
+    tried, flagged, reached = planted(m)
+    figures = [(pct(s["reach_person"]), f"av stemmene mot styret når en person (intervall {pct(s['reach_person_ci'][0])} til {pct(s['reach_person_ci'][1])})"),
+               (pct(s["cleared"]), f"av forslagene går til samlet signering (intervall {pct(s['cleared_ci'][0])} til {pct(s['cleared_ci'][1])})"),
+               (pct(lane["precision"]), f"presisjon i sporet Mot styret (intervall {pct(s['against_lane_precision_ci'][0])} til {pct(s['against_lane_precision_ci'][1])})"),
+               (pct(high), f"av utkastene med høy konfidens var lik NBIMs stemme, mot basisraten {pct(base_rate)}")]
     fig = "".join(f"<div><strong>{v}</strong>{k}</div>" for v, k in figures)
-    built = ("Voting Desk er en digital kollega som leser sakslisten til en generalforsamling og foreslår FOR, MOT eller AVSTÅ på hvert forslag, med sitat fra retningslinjen som gjaldt på møtedatoen. "
-             "Konfidensen er et tall: hvor ofte samme type utkast traff NBIMs stemme i 2024. Under 95 % og alle forslag mot styret går til en stewardship manager, resten signeres samlet med stikkprøve. "
-             "Beslutningen vi støtter er hvilke forslag en person må lese før stemmeintensjonen publiseres. "
-             f"I testperioden fikk alle {tall(m['coverage']['proposals'])} forslag en stemme og en konfidens, og en person vurderte {pct(m['review_share']['individual'])} enkeltvis ({pct(m['review_share']['with_audit'])} med stikkprøven).")
-    verified = (f"Fasit er NBIMs publiserte stemmer, og målvariabelen er om NBIM stemte annerledes enn styret, fordi FOR på et aksjonærforslag også kan gå mot styret. "
-                f"Vi justerte på 2023, satte terskelen på 2024, låste metoden og kjørte testperioden 2025–2026 én gang ({tall(m['scored'])} forslag, {m['against']} mot styret). "
-                f"Vi måler presisjon og recall, ikke accuracy, fordi å alltid følge styret gir {pct(m['accuracy']['follow_board'])} accuracy og fanger ingen. "
-                f"Systemet fanget {pct(m['recall'])}, og {pct(p['difference'])[:-2]} prosentpoeng flere forslag gikk til samlet signering enn med tekstmodellen ved samme fangst (intervall {points(p['ci'][0])} til {points(p['ci'][1])}). "
-                f"På MOT-stemmer er presisjon {pct(a['precision'], 0)} og recall {pct(a['recall'], 0)}, mot {pct(b['precision'], 0)} og {pct(b['recall'], 0)} for å følge styret.")
-    need = (f"De fleste stemmene mot styret avhenger av fakta som ikke står på stemmeseddelen. "
-            f"En agent som søkte i innkallingen på {ag['meetings']} amerikanske møter ga mer konkrete grunner, men fanget ikke flere. "
-            "Vi trenger dokumenter utenfor USA, posisjonsstørrelse og NBIMs selskapsspesifikke grunner. "
-            "Neste steg er prøvedrift side om side med analytikere.")
-    policy = (f"NBIM mildnet regelen om å kombinere styreleder og konsernsjef rundt mars 2026. Der utkastet siterte regelen, stemte NBIM mot styret i "
-              f"{c['before']['against']} av {c['before']['n']} saker før endringen og {c['after']['against']} av {c['after']['n']} etter. Utvalget er lite, men historikk må vektes ned når en retningslinje endres.")
-    limits = (f"{resistance_text(m)} "
-              f"Testperioden er ikke helt blind, og rapporteringskoden ble rettet etter låsing. "
-              f"Bare {pct(m['citation_coverage'], 0)} av forslagene siterer en regel som avgjør saken, de øvrige siterer utgangspunktet om å støtte styret. "
-              f"Utvalget er {m['companies']} selskaper, og et kontrollert sitat viser at regelen finnes, ikke at den gjelder.")
+    rule = late["deciding_rule"]
+    cuts = "; ".join(f"{num(r['cut'], 2)}{' (låst)' if r['frozen'] else ''} gir {pct(r['reach_person'])} og {pct(r['cleared'])}" for r in s["operating_points"]["rows"])
+    built = ("Voting Desk leser sakslisten til en generalforsamling og foreslår FOR, MOT eller AVSTÅ på hvert forslag. "
+             "Beslutningen vi støtter, er hvilke forslag en stewardship manager må lese før stemmen publiseres. "
+             "Agenten foreslår, koden kontrollerer, og mennesket bestemmer. "
+             "Hvert utkast viser regelen det hviler på, og lav konfidens går alltid til en person.")
+    verified = (f"Fasit er NBIMs publiserte stemmer, og målet er om NBIM stemte annerledes enn styret. "
+                f"Accuracy duger ikke: å alltid følge styret gir {pct(base_rate)} og fanger ingen. "
+                f"Vi låste systemet og kjørte det én gang på {tall(s['meetings'])} møter i {s['companies']} selskaper utenfor utviklingen, {s['against']} stemmer mot styret. "
+                "Vi slår å følge styret og å gjenta forrige stemme, men ikke vår egen enkle modell på ruting. Den gir ingen stemme eller begrunnelse.")
+    match, unread = late["section_match"], late["unread"]
+    notes = (f"Terskelen {num(s['operating_points']['rows'][1]['cut'], 2)} på tekstmodellens risikoskår avgjør hva en person leser. Den ble satt før testen, ved om lag 90 % fangst i andre selskaper, og er teamets valg: {cuts} (når en person, samlet signering). "
+             f"MOT: presisjon {pct(mot['precision'])}, recall {pct(mot['recall'])}; å følge styret gir {pct(board['precision'])} og {pct(board['recall'])}. "
+             "Fasit for 2026 er fra NBIMs stemme-API, klarert med arrangøren; systemet trenger det ikke i drift.")
+    fn, fy = f["not_founder"], f["founder"]
+    policy = (f"Retningslinjene åpnet til og med 2025 for å støtte grunnleggere som er både styreleder og konsernsjef, og NBIM stemte mot i {fn['against']} av {fn['n']} saker uten grunnlegger og {fy['against']} av {fy['n']} med (etikettene er våre). "
+              f"Etter at «will not» ble «may not» i 2026, falt stemmene mot fra {c['before']['against']} av {c['before']['n']} til {c['after']['against']} av {c['after']['n']}. "
+              "Utvalgene er små, men historikk må vektes ned når en regel endres.")
+    need = (f"Vi testet {d['ideas_failed']} ideer mot krav skrevet på forhånd, og ingen besto. "
+            f"Henrik Engdals lokale modell var ikke like god, {pct(local['batch_at_equal_reach'])} til samlet signering ved lik fangst, men forskjellen er ikke bevist. "
+            "Med én uke til ville vi hentet fakta fra innkallinger utenfor USA, testet Opus og en lokal språkmodell, og lagt til posisjonsstørrelse.")
+    limits = (f"Agenten fulgte ingen plantet instruks: {reached} av {tried} nådde samlet signering i sakslisten, og {followed} av {wide['filings_complete']} innkallinger ble fulgt. "
+              "Indirekte ordlyd slipper likevel forbi skanningen.")
+    caveats = (f"<b>Begrensninger:</b> {unread['against_in_batch']} av {s['against']} stemmer mot styret ble ikke lest. "
+               "Testen leste saksteksten, ikke innkallinger. "
+               f"Sporet Mot styret er svakt fra juli, {season['from_july'][0]} av {season['from_july'][1]} rett. "
+               f"{rules['undated']} av {rules['total']} regler bruker dagens tekst. "
+               "Modellminne kan ikke utelukkes.")
+    values = ("<b>NBIMs verdier:</b> Kvalitet: én låst test. Integritet: svake tall står her. Innovasjon: test på ukjente selskaper. Lagånd: digital kollega og stewardship manager deler arbeidet.")
     css = sheet.CSS + """
 @page{size:A4;margin:0}
-body{font-size:12.5px;line-height:17px}
-.wrap{max-width:none;padding:0 28px}.band{padding:5px 28px;font-size:11px}
-header{padding:12px 0 8px}h1{font-size:24px;line-height:30px;margin:0 0 2px}
-h2{font-size:14.5px;line-height:19px;margin:9px 0 2px}p{margin:0}
-.figures{margin:8px 0 2px;gap:14px}.figures div{font-size:11.5px;line-height:15px}.figures strong{font-size:24px;line-height:30px}
-th{padding:5px 8px;font-size:12.5px}td{padding:4px 8px;font-size:12.5px}tr.own td{background:var(--sand);font-weight:500}
-.limits{font-size:12px;line-height:16px;margin-top:8px}"""
-    body = f"""<header><div class=wrap><h1>Voting Desk</h1><p>Kravrespons, case 1 Stemmegivningsagenten. Westcoast + 1, FinTech Hackathon H2026.</p></div></header>
+body{font-size:13px;line-height:16.7px}
+.wrap{max-width:none;padding:0 26px}.band{padding:3px 26px;font-size:10.8px;line-height:13px}
+header{padding:5px 0 4px}h1{font-size:21px;line-height:25px;margin:0}header p{font-size:11.6px;line-height:14px}
+h2{font-size:15px;line-height:20px;margin:18px 0 3px}p{margin:0}
+.figures{margin:4px 0 0;gap:14px;grid-template-columns:repeat(4,1fr)}.figures div{font-size:10.6px;line-height:13px;padding-top:3px}.figures strong{font-size:21px;line-height:25px}
+.tables{display:grid;grid-template-columns:1.12fr 1fr;gap:12px;margin-top:5px}table{margin:0}th{padding:2px 6px;font-size:10.8px;line-height:13.6px}td{padding:1px 6px;font-size:10.8px;line-height:13.8px}tr.own td{background:var(--sand);font-weight:500}
+.small{font-size:11.5px;line-height:15px;margin-top:9px}"""
+    body = f"""<header><div class=wrap><h1>Voting Desk</h1><p>Kravrespons, case 1 Stemmegivningsagenten.</p></div></header>
 <main class=wrap><div class=figures>{fig}</div>
 <h2>Hva vi bygde</h2><p>{built}</p>
 <h2>Hvordan vi verifiserte det</h2><p>{verified}</p>
-<div style="margin-top:6px">{table(m)}</div>
+<div class=tables>{table(s, q)}{two_views(late["two_views"])}</div><p class=small>{notes}</p>
 <h2>Retningslinje mot praksis</h2><p>{policy}</p>
 <h2>Hva vi ville trengt videre</h2><p>{need}</p>
-<h2>Motstandstest og begrensninger</h2><p>{limits}</p></main>"""
+<h2>Motstandstest og begrensninger</h2><p>{limits}</p>
+<p class=small>{caveats}</p>
+<p class=small>{values}</p></main>"""
     html = sheet.page("Voting Desk, kravrespons", body).replace(sheet.CSS, css).replace('lang="en"', 'lang="no"').replace(sheet.BAND, "Studentprototype, Westcoast + 1, FinTech Hackathon H2026. Ikke et NBIM-produkt.")
-    (OUT / "kravrespons.html").write_text(html, encoding="utf-8")
+    (desk.ROOT / "Kravrespons.html").write_text(html, encoding="utf-8")
+
+
+def write_sheet(frame, prefix):
+    name = "".join(c if c.isalnum() else "_" for c in frame["company"].iloc[0]).strip("_")
+    (OUT / "sheets" / f"{prefix}_{name}.html").write_text(sheet.review_sheet(frame), encoding="utf-8")
+
+
+def seeded(frame):
+    ids = sorted(frame["meeting_id"].unique())
+    random.Random(SEED).shuffle(ids)
+    return ids
 
 
 def samples():
-    test = pd.read_csv(OUT / "items_test.csv", dtype={"item": str, "meeting_id": str})
-    ids = sorted(test["meeting_id"].unique())
-    random.Random(SEED).shuffle(ids)
-    folder = OUT / "sheets"
-    folder.mkdir(exist_ok=True)
-    for mid in ids[:3]:
-        frame = test[test["meeting_id"] == mid]
-        name = "".join(c if c.isalnum() else "_" for c in frame["company"].iloc[0]).strip("_")
-        (folder / f"holdout_{name}.html").write_text(sheet.review_sheet(frame), encoding="utf-8")
+    (OUT / "sheets").mkdir(exist_ok=True)
+    kinds = {"item": str, "meeting_id": str, "company_id": str}
+    test = pd.read_csv(OUT / "items_test.csv", dtype=kinds)
+    for mid in seeded(test)[:3]:
+        write_sheet(test[test["meeting_id"] == mid], "holdout")
+    sealed = pd.read_csv(OUT / "items_sealed.csv", dtype=kinds)
+    lanes = sealed.groupby("meeting_id")["lane"].agg(set)
+    missed = set(sealed.loc[(sealed["against"] == 1) & (sealed["lane"] == sheet.WITH), "meeting_id"])
+    order = seeded(sealed)
+    pick = next(m for m in order if m in missed and sheet.AGAINST in lanes[m])  # the first meeting in seed order that shows both a catch and a miss
+    frame = sealed[sealed["meeting_id"] == pick]
+    write_sheet(frame, "sealed")
+    miss = frame[(frame["against"] == 1) & (frame["lane"] == sheet.WITH)]
+    print("sealed sheet:", frame["company"].iloc[0], frame["meeting_date"].iloc[0], "| missed items:", list(miss["item"]), "| position in seed order:", order.index(pick) + 1)
 
 
 if __name__ == "__main__":
     page(json.loads((OUT / "metrics.json").read_text(encoding="utf-8")))
     samples()
-    print("wrote results/kravrespons.html and three holdout sheets")
+    print("wrote Kravrespons.html and the seed-picked sheets")

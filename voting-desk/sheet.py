@@ -9,6 +9,7 @@ GUIDELINES = RULES["source"]
 CALIBRATION = ROOT / "results" / "confidence.json"
 SCREEN_FLAG = "similar to past votes against the board"
 SCREEN_TEXT = "wording resembles proposals NBIM has opposed at other companies"
+STARTING_POINT = "Our starting point when deciding how to vote is to support the board."  # verbatim from GUIDELINES
 PAPERS = {  # position paper that sharpens each guideline section
     "1.1": ("Board independence", "https://www.nbim.no/contentassets/3bcb2b06ed0847c8ab5524e3a9baa555/board-independence.pdf"),
     "1.2": ("Board independence", "https://www.nbim.no/contentassets/3bcb2b06ed0847c8ab5524e3a9baa555/board-independence.pdf"),
@@ -52,8 +53,8 @@ a{color:var(--blue)}
 details{font-size:14px;line-height:20px;margin-top:8px}summary{cursor:pointer}
 .vote{font-weight:500}
 footer{background:var(--sky);margin-top:48px;padding:24px 0;font-size:14px;line-height:20px;color:var(--muted)}
-@media (max-width:640px){h1{font-size:32px;line-height:40px}td,th{padding:8px}}
-@media print{.band{-webkit-print-color-adjust:exact;print-color-adjust:exact}details{display:none}}
+@media (max-width:640px){h1{font-size:32px;line-height:40px}td,th{padding:8px}main{overflow-x:auto}}
+@media print{.band{-webkit-print-color-adjust:exact;print-color-adjust:exact}details:not([open]){display:none}}
 """
 HEAD = ('<link rel="preconnect" href="https://fonts.gstatic.com">'
         '<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">')
@@ -93,11 +94,13 @@ def clean(value):
 def row_html(r):
     lane, why, rule, section = r["lane"], clean(r.get("why")), clean(r.get("rule")), clean(r.get("section"))
     needs = "Person" if lane != WITH else "Audit" if audit(r["meeting_id"], r["item"]) else "Batch"
-    tag = f'<span class="tag{" against" if lane == AGAINST else ""}">{lane}</span>'
+    tag = f'<span class="tag{" against" if lane == AGAINST else ""}">{lane}</span>' + ('<span class="tag" title="Order only. The proposed vote is unchanged.">Read first</span>' if r.get("read_first") else "")
     if rule:
-        basis = f'<a href="{GUIDELINES}">Global Voting Guidelines {escape(section)}</a>' + ("" if r.get("cited") else ", quote not verified")
+        basis = f'<a href="{GUIDELINES}">Global voting guidelines {escape(section)}</a>' + ("" if r.get("cited") else ", quote not verified")
+    elif clean(r["draft"]) != clean(r["mgmt_rec"]):  # a blank board position differs too: nothing to support, and desk.decide sends it to a person
+        basis = "No guideline rule cited, so a person decides."
     else:
-        basis = f'<a href="{GUIDELINES}">Global Voting Guidelines</a>, starting point: support the board'
+        basis = f'<a href="{GUIDELINES}">Global voting guidelines</a>: "{STARTING_POINT}"'
     detail = ""
     if rule:
         detail += f"<blockquote>{escape(clean(r.get('quote')))}</blockquote>"
@@ -110,11 +113,12 @@ def row_html(r):
         paper = PAPERS.get(section)
         link = f' <a href="{paper[1]}">Position paper: {escape(paper[0])}</a>.' if paper else ""
         detail += f"<div class=note><b>Vote rationale:</b> {escape(template)}{link}</div>"
-    fold = f"<details><summary>Reason and source</summary>{detail}</details>" if detail else ""
+    fold = f"<details{' open' if lane == AGAINST else ''}><summary>Reason and source</summary>{detail}</details>" if detail else ""
+    pay = f'<div class=note><span>Pay facts:</span> {escape(clean(r.get("pay")))}</div>' if clean(r.get("pay")) else ""
     check = f'<div class=note><span>Check:</span> {escape(clean(r.get("fact")))}</div>' if clean(r.get("fact")) and lane != WITH else ""
-    return (f'<tr data-item="{escape(str(r["item"]))}" data-vote="{escape(clean(r["draft"]))}"{" class=unclear" if lane == UNCLEAR else ""}>'
+    return (f'<tr data-item="{escape(str(r["item"]))}" data-vote="{escape(clean(r["draft"]))}" data-lane="{lane}"{" class=unclear" if lane == UNCLEAR else ""}>'
             f'<td>{escape(str(r["item"]))}</td><td>{tag}<div>{escape(str(r["proposal_text"]))}</div>'
-            f'<div class=note><span>Draft reason:</span> {escape(why)}</div><div class=note><span>Basis:</span> {basis}</div>{check}{fold}</td>'
+            f'<div class=note><span>Draft reason:</span> {escape(why)}</div><div class=note><span>Basis:</span> {basis}</div>{pay}{check}{fold}</td>'
             f'<td>{escape(clean(r["mgmt_rec"])) or "Not stated"}</td><td class=vote>{escape(clean(r["draft"]))}</td>'
             f'<td>{band(score(r))} {score(r)} %</td><td>{needs}</td></tr>')
 
@@ -128,15 +132,16 @@ def review_sheet(frame, cost=None, drafted_by=None):
     fig = "".join(f"<div><strong>{v}</strong>{k}</div>" for v, k in figures)
     rows = "".join(row_html(r) for r in frame.to_dict("records"))
     spent = f" Cost ${cost:.3f}." if cost is not None else ""
-    made = f"Drafted by {drafted_by}, which is not the evaluated setup." if drafted_by else f"Model {MODEL}, effort {EFFORT}, prompt {PROMPT_HASH}."
+    made = f"Drafted by {drafted_by}, which is not the tested setup." if drafted_by else f"Model {MODEL}, effort {EFFORT}, prompt {PROMPT_HASH}."
     record = f"<p><b>Vote record used:</b> {escape(str(first['record']))}</p>" if "record" in frame else ""
+    notice = f"<p><b>Not fully read:</b> {escape(str(first['notice']))}</p>" if "notice" in frame else ""
     history = (f"<details><summary>NBIM's earlier votes at this company</summary><pre>{escape(str(first['history']))}</pre></details>"
                if "history" in frame else "")
     body = f"""<header><div class=wrap><h1>{escape(str(first['company']))}</h1>
 <p><b>Country:</b> {escape(str(first['country']))}</p><p><b>Meeting date:</b> {escape(str(first['meeting_date']))}</p>
-{record}</div></header>
+{record}{notice}</div></header>
 <main class=wrap data-company="{escape(str(first['company']), quote=True)}" data-date="{escape(str(first['meeting_date']), quote=True)}"><div class=figures>{fig}</div>
 <table><thead><tr><th>#</th><th>Proposal</th><th>Mgt rec</th><th>Proposed vote</th><th>Confidence</th><th>Review</th></tr></thead><tbody>{rows}</tbody></table>
-{history}<p class=note>Nothing is published before a stewardship manager has signed off. A verified quote shows that the rule exists and was in force, not that it applies.</p></main>
+{history}<p class=note>Nothing is published before a stewardship manager has signed off. A verified quote shows that the rule exists, not that it applies.</p></main>
 <footer><div class=wrap>{made}{spent} Sources: company documents and NBIM's published guidelines and votes. This page is not investment advice.</div></footer>"""
     return page(f"Review sheet, {first['company']}", body)
