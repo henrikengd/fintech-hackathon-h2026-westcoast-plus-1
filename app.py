@@ -105,46 +105,62 @@ CONTROLS = """<dialog class=logbox id=logbox>
     const b = e.target.closest('button');
     if (b) document.querySelectorAll('#logvote button').forEach(x => x.setAttribute('aria-pressed', x === b));
   };
+  async function post(item, decision, reason, extra) {
+    const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item,
+      decision, reviewer: who, sheet: sheetName, reason, ...extra})});
+    return r.ok ? '' : (await r.json()).error;
+  }
   form.addEventListener('submit', async e => {
     e.preventDefault();
     if (pending.needsReason && !why.value.trim()) { error.textContent = 'En endret stemme trenger en begrunnelse.'; return why.focus(); }
     if (pending.choices) pending.decision = document.querySelector('#logvote [aria-pressed=true]').dataset.v;
-    const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item: pending.item,
-      decision: pending.decision, reviewer: who, sheet: sheetName, reason: why.value.trim(), ...pending.extra})});
-    if (!r.ok) { error.textContent = (await r.json()).error; return; }
+    const failed = await post(pending.item, pending.decision, why.value.trim(), pending.extra);
+    if (failed) { error.textContent = failed; return; }
     pending.done(); box.close();
   });
 
   document.querySelectorAll('details.prop').forEach(row => {
-    const act = document.createElement('div'), state = document.createElement('span');
+    const act = document.createElement('div'), state = document.createElement('span'), item = row.dataset.item;
     act.className = 'act';
     state.className = 'logged'; state.setAttribute('role', 'status');
     const extra = {proposed_vote: row.dataset.vote, lane: LANE[row.dataset.lane], confidence: row.dataset.score + ' %'};
     const title = row.querySelector('.title strong').textContent;
-    if (row.dataset.lane !== 'unclear') {  // a clear proposal keeps its vote unless a person changes it
-      act.innerHTML = '<button class="btn primary" type=button>Godkjenn</button><button class=btn type=button>Endre stemme</button>';
-      act.append(state);
-      const [approve, change] = act.querySelectorAll('.btn');
-      approve.onclick = () => ask({title: 'Godkjenn stemme',
-        what: `Forslag ${row.dataset.item}: ${title}. Foreslått ${row.dataset.vote}.`, item: row.dataset.item, decision: row.dataset.vote,
-        needsReason: false, extra,
-        done: () => { state.textContent = `Godkjent ${row.dataset.vote}`; row.classList.add('approved'); }});
+    let current = row.dataset.vote;
+    const mark = text => { state.textContent = text; row.classList.add('approved'); };
+    const button = (text, primary) => Object.assign(document.createElement('button'), {className: primary ? 'btn primary' : 'btn', type: 'button', textContent: text});
+
+    // Endre stemme is always there on a clear proposal, and on an unclear one once a vote is logged.
+    function changeButton() {
+      const change = button('Endre stemme');
       change.onclick = () => ask({title: 'Endre stemme',
-        what: `Forslag ${row.dataset.item}: ${title}. Foreslått ${row.dataset.vote}.`, item: row.dataset.item, decision: '',
-        choices: ['FOR', 'MOT', 'AVSTÅ'].filter(v => v !== row.dataset.vote), needsReason: true, extra,
-        done: () => { state.textContent = `Endret til ${pending.decision}`; row.classList.add('approved'); }});
+        what: `Forslag ${item}: ${title}. Foreslått ${row.dataset.vote}${current !== row.dataset.vote ? `, nå ${current}` : ''}.`, item, decision: '',
+        choices: ['FOR', 'MOT', 'AVSTÅ'].filter(v => v !== current), needsReason: true, extra,
+        done: () => { current = pending.decision; mark(`Endret til ${current}`); }});
+      return change;
+    }
+
+    if (row.dataset.lane !== 'unclear') {  // a clear proposal is approved as proposed with one press, no dialog
+      const approve = button('Godkjenn', true);
+      approve.onclick = async () => {
+        approve.disabled = true;
+        const failed = await post(item, row.dataset.vote, '', extra);
+        approve.disabled = false;
+        if (failed) { state.textContent = failed; return; }
+        current = row.dataset.vote; mark(`Godkjent ${current}`);
+      };
+      act.append(approve, changeButton(), state);
       return row.querySelector('.body').append(act);
     }
     act.innerHTML = '<div class=seg role=group aria-label="Beslutning">' + ['FOR', 'MOT', 'AVSTÅ'].map(v =>
-      `<button type=button data-v="${v}" aria-pressed=${v === row.dataset.vote}>${v}</button>`).join('') + '</div><button class="btn primary" type=button>Logg</button>';
-    act.append(state);
-    const seg = act.querySelector('.seg'), log = act.querySelector('.btn');
+      `<button type=button data-v="${v}" aria-pressed=${v === row.dataset.vote}>${v}</button>`).join('') + '</div>';
+    const seg = act.querySelector('.seg'), log = button('Logg', true);
+    act.append(log, state);
     seg.onclick = e => { const b = e.target.closest('button'); if (b) seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); };
     log.onclick = () => {
       const decision = seg.querySelector('[aria-pressed=true]').dataset.v;
-      ask({title: 'Logg beslutning', what: `Forslag ${row.dataset.item}: ${title}. Beslutning ${decision}, foreslått ${row.dataset.vote}.`,
-        item: row.dataset.item, decision, needsReason: decision !== row.dataset.vote,
-        extra, done: () => { state.textContent = `Logget ${decision}`; row.classList.add('approved'); }});
+      ask({title: 'Logg beslutning', what: `Forslag ${item}: ${title}. Beslutning ${decision}, foreslått ${row.dataset.vote}.`,
+        item, decision, needsReason: decision !== row.dataset.vote, extra,
+        done: () => { current = decision; mark(`Logget ${decision}`); seg.remove(); log.replaceWith(changeButton()); }});
     };
     row.querySelector('.body').append(act);
   });
