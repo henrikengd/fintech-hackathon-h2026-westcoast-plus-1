@@ -146,7 +146,7 @@ CONTROLS = """<dialog class=logbox id=logbox>
         const failed = await post(item, row.dataset.vote, '', extra);
         approve.disabled = false;
         if (failed) { state.textContent = failed; return; }
-        current = row.dataset.vote; mark(`Godkjent ${current}`);
+        current = row.dataset.vote; mark(`Godkjent ${current}`); approve.remove();
       };
       act.append(approve, changeButton(), state);
       return row.querySelector('.body').append(act);
