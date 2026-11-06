@@ -625,7 +625,7 @@ class Sheet(unittest.TestCase):
         rule = dict(self.row, lane=desk.AGAINST, draft="MOT", rule="NBIM-1.3.1", section="1.3", quote="q", cited=True, confidence="Medium")
         self.assertEqual(sheet.item(rule)["lane"], "against")
         self.assertEqual(sheet.item(dict(rule, lane=desk.UNCLEAR))["lane"], "unclear")
-        self.assertIn('r.lane === "against" ? " open" : ""', sheet.asset("report.js"), "only rows against the board open")
+        self.assertNotIn(" open", sheet.asset("report.js").split("function proposal")[1].split("</details>")[0], "every row starts closed")
 
 
 class Added(unittest.TestCase):

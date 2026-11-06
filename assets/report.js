@@ -61,7 +61,7 @@ function proposal(r) {
     const paper = r.paper ? ` <a href="${esc(r.paper[1])}">Position paper: ${esc(r.paper[0])}</a>.` : "";
     body += `<div class=rationale><p><b>Vote rationale:</b> ${esc(r.rationale)}${paper}</p></div>`;
   }
-  return `<details class=prop data-lane=${r.lane} data-item="${esc(r.item)}" data-vote="${esc(r.vote)}" data-score="${r.score}"${r.lane === "against" ? " open" : ""}>
+  return `<details class=prop data-lane=${r.lane} data-item="${esc(r.item)}" data-vote="${esc(r.vote)}" data-score="${r.score}">
     <summary>
       <span class=no>${esc(r.item)}</span>
       <span class=title><strong>${esc(r.text)}</strong><span class=tags>${tags}</span></span>
