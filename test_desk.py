@@ -1136,7 +1136,7 @@ class Numbers(unittest.TestCase):
     def setUpClass(cls):
         import json
         cls.m = json.loads((desk.ROOT / "results" / "metrics.json").read_text(encoding="utf-8"))
-        cls.text = {name: (desk.ROOT / name).read_text(encoding="utf-8") for name in ("README.md", "Kravrespons.html")}
+        cls.text = {name: (desk.ROOT / name).read_text(encoding="utf-8") for name in ("README.md", "results/Kravrespons.html")}
         s = cls.m["sealed"]
         cls.history = s["baselines_after_freeze"][0]
         cls.shares = [s["reach_person"], s["cleared"], s["against_lane"]["precision"], s["against_lane"]["recall"], s["literal_mot_draft"]["precision"], s["literal_mot_draft"]["recall"],
@@ -1145,7 +1145,7 @@ class Numbers(unittest.TestCase):
 
     def test_every_headline_share_is_in_the_readme_and_on_the_page(self):
         for x in self.shares[:9] + self.shares[-2:]:
-            self.assertIn(f"{x * 100:.1f}".replace(".", ",") + " %", self.text["Kravrespons.html"])
+            self.assertIn(f"{x * 100:.1f}".replace(".", ",") + " %", self.text["results/Kravrespons.html"])
         for x in self.shares[:6]:
             self.assertIn(f"{x * 100:.1f}%", self.text["README.md"])
 
@@ -1156,14 +1156,14 @@ class Numbers(unittest.TestCase):
 
     def test_figures_computed_after_the_run_match(self):
         unread = self.m["sealed_after_run"]["unread"]
-        self.assertIn(f"{unread['against_in_batch']} av {self.m['sealed']['against']}", self.text["Kravrespons.html"])
+        self.assertIn(f"{unread['against_in_batch']} av {self.m['sealed']['against']}", self.text["results/Kravrespons.html"])
 
     def test_the_two_views_cover_every_scored_proposal_and_are_on_the_page(self):
         views = self.m["sealed_after_run"]["two_views"]
         self.assertEqual(sum(v["proposals"] for v in views.values()), self.m["sealed"]["scored"])
         for v in views.values():
-            self.assertIn(f"{v['proposals']:,}".replace(",", " "), self.text["Kravrespons.html"])
-            self.assertIn(f"{v['against_board'] * 100:.1f}".replace(".", ",") + " %", self.text["Kravrespons.html"])
+            self.assertIn(f"{v['proposals']:,}".replace(",", " "), self.text["results/Kravrespons.html"])
+            self.assertIn(f"{v['against_board'] * 100:.1f}".replace(".", ",") + " %", self.text["results/Kravrespons.html"])
 
     def test_the_sample_filing_is_in_the_folder(self):
         self.assertTrue((desk.ROOT / re.search(r"data/meetings/us/\S+?\.htm", self.text["README.md"])[0]).is_file())

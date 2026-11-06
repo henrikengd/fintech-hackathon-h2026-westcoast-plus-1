@@ -127,7 +127,7 @@ h2{font-size:15px;line-height:20px;margin:18px 0 3px}p{margin:0}
 <p class=small>{caveats}</p>
 <p class=small>{values}</p></main>"""
     html = sheet.page("Voting Desk, kravrespons", body).replace(sheet.CSS, css).replace('lang="en"', 'lang="no"').replace(sheet.BAND, "Studentprototype, Westcoast + 1, FinTech Hackathon H2026. Ikke et NBIM-produkt.")
-    (desk.ROOT / "Kravrespons.html").write_text(html, encoding="utf-8")
+    (desk.ROOT / "results" / "Kravrespons.html").write_text(html, encoding="utf-8")
 
 
 def write_sheet(frame, prefix):
