@@ -108,9 +108,9 @@ ISO = {"Australia": "au", "Belgium": "be", "Bermuda": "bm", "Brazil": "br", "Bri
        "United Arab Emirates": "ae", "United Kingdom": "gb", "United States": "us", "Vietnam": "vn"}
 SUFFIX = re.compile(r"\b(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|ag|asa|ab|sa|nv|holdings?|group)\b")
 NAV = """<nav class=nav aria-label="Account">
-  <button class=lang type=button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg><span>Norsk</span></button>
-  <a class=newreport href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New report</a>
-  <span class=avatar aria-label="Profile" role="img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></svg></span>
+  <button class=lang type=button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg><span>English</span></button>
+  <a class=newreport href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Ny rapport</a>
+  <span class=avatar aria-label="Profil" role="img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></svg></span>
 </nav>"""
 
 
@@ -186,19 +186,19 @@ def review_sheet(frame, cost=None, drafted_by=None):
     data = {"company": str(first["company"]), "country": clean(first.get("country")), "meeting_date": day,
             "items": items, "sections": sections(day), "counts": counts(items), "drafted_by": drafted_by or "",
             "notice": clean(first.get("notice")) if "notice" in frame else ""}
-    info = [f"<li>Country: {escape(data['country'] or 'Not stated')} {flag(data['country'])}</li>"]
+    info = [f"<li>Land: {escape(data['country'] or 'Ikke oppgitt')} {flag(data['country'])}</li>"]
     if "record" in frame:
-        info.append(f"<li>Vote record: {escape(str(first['record']))}</li>")
+        info.append(f"<li>Stemmepost: {escape(str(first['record']))}</li>")
     if drafted_by:
-        info.append(f"<li>Drafted by {escape(drafted_by)}, which is not the tested setup</li>")
-    history = (f'<section><details class=history><summary>NBIM\'s earlier votes at this company</summary><pre>{escape(str(first["history"]))}</pre></details></section>'
+        info.append(f"<li>Utkastet er laget av {escape(drafted_by)}, som ikke er oppsettet vi testet</li>")
+    history = (f'<section><details class=history><summary>NBIMs tidligere stemmer i selskapet</summary><pre>{escape(str(first["history"]))}</pre></details></section>'
                if "history" in frame and clean(first.get("history")) else "")
     body = f"""<header class=wrap>
   <p class=eyebrow>Stemmegivningsrapport</p>
   <h1>{escape(data['company'])}</h1>
   <ul class=info>{''.join(info)}</ul>
-  <p class=meeting>General meeting {escape(day)}</p>
-  {f'<p class=notice><b>Not fully read:</b> {escape(data["notice"])}</p>' if data["notice"] else ""}
+  <p class=meeting>Generalforsamling {escape(day)}</p>
+  {f'<p class=notice><b>Ikke lest i sin helhet:</b> {escape(data["notice"])}</p>' if data["notice"] else ""}
   <div class=overview>
     <div class="summary total" id=total></div>
     <div class="summary total" id=reviewed></div>
@@ -207,16 +207,16 @@ def review_sheet(frame, cost=None, drafted_by=None):
 </header>
 <main class=wrap data-company="{escape(data['company'], quote=True)}" data-date="{escape(day, quote=True)}">
   <section>
-    <div class=bar-head><h2>Proposals</h2><div class=seg id=filters role=group aria-label="Show proposals"></div></div>
-    <div class=cols aria-hidden="true"><span>#</span><span>Proposal</span><span>Board</span><span>Proposed</span><span>Confidence</span><span>Review</span><span></span></div>
+    <div class=bar-head><h2>Forslag</h2><div class=seg id=filters role=group aria-label="Vis forslag"></div></div>
+    <div class=cols aria-hidden="true"><span>#</span><span>Forslag</span><span>Styret</span><span>Foreslått</span><span>Konfidens</span><span>Gjennomgang</span><span></span></div>
     <div id=list></div>
-    <div class=tools><button id=toggle type=button>Open all</button></div>
+    <div class=tools><button id=toggle type=button>Åpne alle</button></div>
   </section>
   {history}
 </main>"""
     payload = json.dumps(data, ensure_ascii=False, default=str).replace("</", "<\\/")
     script = f'<script id=data type="application/json">{payload}</script><script>{asset("report.js")}</script>'
-    return dark_page(f"Review sheet, {data['company']}", body, script)
+    return dark_page(f"Stemmegivningsrapport, {data['company']}", body, script, lang="no")
 
 
 def sheet_data(html):

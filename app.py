@@ -70,12 +70,12 @@ go.onclick = () => $('text').value.trim() ? send($('text').value, 'pasted.txt') 
 # Sign-off on a sheet: pick a vote in each proposal, press Log, and a dialog asks for name and reason.
 CONTROLS = """<dialog class=logbox id=logbox>
   <form method=dialog id=logform>
-    <h3 id=logtitle>Log decision</h3>
+    <h3 id=logtitle>Logg beslutning</h3>
     <p id=logwhat></p>
-    <div class=seg id=logvote role=group aria-label="New vote" hidden></div>
-    <label>Reason <textarea id=why rows=4></textarea></label>
+    <div class=seg id=logvote role=group aria-label="Ny stemme" hidden></div>
+    <label>Begrunnelse <textarea id=why rows=4></textarea></label>
     <p class=logerror id=logerror role=alert></p>
-    <div class=logbuttons><button class=btn type=button id=logcancel>Cancel</button><button class="btn primary" type=submit>Log decision</button></div>
+    <div class=logbuttons><button class=btn type=button id=logcancel>Avbryt</button><button class="btn primary" type=submit>Logg beslutning</button></div>
   </form>
 </dialog>
 <script>
@@ -94,7 +94,7 @@ CONTROLS = """<dialog class=logbox id=logbox>
     pending = task; error.textContent = ''; why.value = '';
     document.getElementById('logtitle').textContent = task.title;
     document.getElementById('logwhat').textContent = task.what;
-    why.required = task.needsReason; why.placeholder = task.needsReason ? 'Why you change the proposed vote' : 'Optional';
+    why.required = task.needsReason; why.placeholder = task.needsReason ? 'Hvorfor du endrer den foreslåtte stemmen' : 'Valgfritt';
     const vote = document.getElementById('logvote');
     vote.hidden = !task.choices;  // Change vote: the new vote is one of the other two
     if (task.choices) vote.innerHTML = task.choices.map((v, i) => `<button type=button data-v="${v}" aria-pressed=${i === 0}>${v}</button>`).join('');
@@ -107,7 +107,7 @@ CONTROLS = """<dialog class=logbox id=logbox>
   };
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    if (pending.needsReason && !why.value.trim()) { error.textContent = 'A changed vote needs a reason.'; return why.focus(); }
+    if (pending.needsReason && !why.value.trim()) { error.textContent = 'En endret stemme trenger en begrunnelse.'; return why.focus(); }
     if (pending.choices) pending.decision = document.querySelector('#logvote [aria-pressed=true]').dataset.v;
     const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item: pending.item,
       decision: pending.decision, reviewer: who, sheet: sheetName, reason: why.value.trim(), ...pending.extra})});
@@ -122,24 +122,24 @@ CONTROLS = """<dialog class=logbox id=logbox>
     const extra = {proposed_vote: row.dataset.vote, lane: LANE[row.dataset.lane], confidence: row.dataset.score + ' %'};
     const title = row.querySelector('.title strong').textContent;
     if (row.dataset.lane !== 'unclear') {  // a clear proposal keeps its vote unless a person changes it
-      act.innerHTML = '<button class=btn type=button>Change vote</button>';
+      act.innerHTML = '<button class=btn type=button>Endre stemme</button>';
       act.append(state);
-      act.querySelector('.btn').onclick = () => ask({title: 'Change vote',
-        what: `Proposal ${row.dataset.item}: ${title}. Proposed ${row.dataset.vote}.`, item: row.dataset.item, decision: '',
+      act.querySelector('.btn').onclick = () => ask({title: 'Endre stemme',
+        what: `Forslag ${row.dataset.item}: ${title}. Foreslått ${row.dataset.vote}.`, item: row.dataset.item, decision: '',
         choices: ['FOR', 'MOT', 'AVSTÅ'].filter(v => v !== row.dataset.vote), needsReason: true, extra,
-        done: () => { state.textContent = `Changed to ${pending.decision}`; row.classList.add('approved'); }});
+        done: () => { state.textContent = `Endret til ${pending.decision}`; row.classList.add('approved'); }});
       return row.querySelector('.body').append(act);
     }
-    act.innerHTML = '<div class=seg role=group aria-label="Decision">' + ['FOR', 'MOT', 'AVSTÅ'].map(v =>
-      `<button type=button data-v="${v}" aria-pressed=${v === row.dataset.vote}>${v}</button>`).join('') + '</div><button class="btn primary" type=button>Log</button>';
+    act.innerHTML = '<div class=seg role=group aria-label="Beslutning">' + ['FOR', 'MOT', 'AVSTÅ'].map(v =>
+      `<button type=button data-v="${v}" aria-pressed=${v === row.dataset.vote}>${v}</button>`).join('') + '</div><button class="btn primary" type=button>Logg</button>';
     act.append(state);
     const seg = act.querySelector('.seg'), log = act.querySelector('.btn');
     seg.onclick = e => { const b = e.target.closest('button'); if (b) seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); };
     log.onclick = () => {
       const decision = seg.querySelector('[aria-pressed=true]').dataset.v;
-      ask({title: 'Log decision', what: `Proposal ${row.dataset.item}: ${title}. Decision ${decision}, proposed ${row.dataset.vote}.`,
+      ask({title: 'Logg beslutning', what: `Forslag ${row.dataset.item}: ${title}. Beslutning ${decision}, foreslått ${row.dataset.vote}.`,
         item: row.dataset.item, decision, needsReason: decision !== row.dataset.vote,
-        extra, done: () => { state.textContent = `Logged ${decision}`; row.classList.add('approved'); }});
+        extra, done: () => { state.textContent = `Logget ${decision}`; row.classList.add('approved'); }});
     };
     row.querySelector('.body').append(act);
   });

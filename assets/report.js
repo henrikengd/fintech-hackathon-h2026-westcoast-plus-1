@@ -1,7 +1,8 @@
 // Review sheet. Data comes from sheet.review_sheet as JSON in <script id=data>.
 const DATA = JSON.parse(document.getElementById("data").textContent);
 const ITEMS = DATA.items, SECTIONS = DATA.sections;
-const LANES = {against: "Against the board", unclear: "Unclear", with: "With the board"};
+const LANES = {against: "Mot styret", unclear: "Uavklart", with: "Med styret"};
+const REVIEW = {Person: "Person", Batch: "Samlet"};
 const START = "Our starting point when deciding how to vote is to support the board.";  // verbatim from the guidelines
 
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
@@ -22,7 +23,7 @@ function section(r) {
 function basisTitle(r) {
   const s = section(r);
   const title = r.section ? `Global voting guidelines ${r.section}${s ? " " + s.heading : ""}` : "Global voting guidelines";
-  return title + (r.section && !r.cited ? ", quote not verified" : "");
+  return title + (r.section && !r.cited ? ", sitatet er ikke bekreftet" : "");
 }
 
 function basisText(r) {
@@ -34,7 +35,7 @@ function head() {
   const n = ITEMS.length || 1;
   document.getElementById("split").innerHTML =
     ["against", "with", "unclear"].map(l => `<i class=${l}-c style="width:${count(l) / n * 100}%"></i>`).join("");
-  document.getElementById("total").innerHTML = `<strong>${ITEMS.length}</strong><span>proposals</span>`;
+  document.getElementById("total").innerHTML = `<strong>${ITEMS.length}</strong><span>forslag</span>`;
   document.getElementById("lanes").innerHTML =
     ["against", "with", "unclear"].map(l =>
       `<div style="width:${count(l) / n * 100}%"><strong>${count(l)}</strong><span><i class="dot ${l}-c"></i>${LANES[l]}</span></div>`).join("");
@@ -43,32 +44,32 @@ function head() {
 function proposal(r) {
   let tags = `<span class="tag ${r.lane}">${LANES[r.lane]}</span>`;
   if (r.lane === "unclear" && side(r)) tags += `<span class="tag ${side(r)}">${LANES[side(r)]}</span>`;
-  if (r.read_first) tags += `<span class="tag first" title="Order only. The proposed vote is unchanged.">Read first</span>`;
+  if (r.read_first) tags += `<span class="tag first" title="Bare rekkefølge. Den foreslåtte stemmen er uendret.">Les først</span>`;
   // The applied rule is marked inside the full paragraph, so it is not repeated below.
   const full = basisText(r), inside = r.quote && full.includes(r.quote);
   const text = inside ? esc(full).replace(esc(r.quote), `<strong>${esc(r.quote)}</strong>`) : esc(full);
-  let body = `<button class=copy type=button aria-label="Copy context for a language model">${copyIcon}<span>Copy</span></button>
-    <p><b>Draft reason:</b> ${esc(r.why)}</p>`;
+  let body = `<button class=copy type=button aria-label="Kopier konteksten til en språkmodell">${copyIcon}<span>Kopier</span></button>
+    <p><b>Begrunnelse for utkastet:</b> ${esc(r.why)}</p>`;
   body += r.section
-    ? `<p><b>Basis:</b> ${esc(basisTitle(r))}</p><div class=para><button class=more type=button>Read more</button><p>${text}</p></div>`
-    : `<p><b>Basis:</b> ${r.basis === START ? `Global voting guidelines: “${esc(START)}”` : esc(r.basis || START)}</p>`;
-  if (r.quote && !inside) body += `<p><b>Quoted:</b> ${esc(r.quote)}</p>`;
-  if (r.evidence) body += `<p><b>From the filing:</b> ${esc(r.evidence)}</p>`;
-  if (r.pay) body += `<p><b>Pay facts:</b> ${esc(r.pay)}</p>`;
-  if (r.check && r.lane !== "with") body += `<p><b>Check:</b> ${esc(r.check)}</p>`;
-  if (r.flags) body += `<p><b>${r.lane === "unclear" ? "Why it is unclear" : "Reason for review"}:</b> ${esc(r.flags)}</p>`;
+    ? `<p><b>Grunnlag:</b> ${esc(basisTitle(r))}</p><div class=para><button class=more type=button>Les mer</button><p>${text}</p></div>`
+    : `<p><b>Grunnlag:</b> ${r.basis === START ? `Global voting guidelines: “${esc(START)}”` : esc(r.basis || START)}</p>`;
+  if (r.quote && !inside) body += `<p><b>Sitert:</b> ${esc(r.quote)}</p>`;
+  if (r.evidence) body += `<p><b>Fra innkallingen:</b> ${esc(r.evidence)}</p>`;
+  if (r.pay) body += `<p><b>Lønnsfakta:</b> ${esc(r.pay)}</p>`;
+  if (r.check && r.lane !== "with") body += `<p><b>Sjekk:</b> ${esc(r.check)}</p>`;
+  if (r.flags) body += `<p><b>${r.lane === "unclear" ? "Hvorfor uavklart" : "Grunn til gjennomgang"}:</b> ${esc(r.flags)}</p>`;
   if (r.rationale && r.lane === "against") {
-    const paper = r.paper ? ` <a href="${esc(r.paper[1])}">Position paper: ${esc(r.paper[0])}</a>.` : "";
-    body += `<div class=rationale><p><b>Vote rationale:</b> ${esc(r.rationale)}${paper}</p></div>`;
+    const paper = r.paper ? ` <a href="${esc(r.paper[1])}">Posisjonsnotat: ${esc(r.paper[0])}</a>.` : "";
+    body += `<div class=rationale><p><b>Stemmebegrunnelse:</b> ${esc(r.rationale)}${paper}</p></div>`;
   }
   return `<details class=prop data-lane=${r.lane} data-item="${esc(r.item)}" data-vote="${esc(r.vote)}" data-score="${r.score}">
     <summary>
       <span class=no>${esc(r.item)}</span>
       <span class=title><strong>${esc(r.text)}</strong><span class=tags>${tags}</span></span>
-      <span class=cell><span class=lab>Board</span>${esc(r.board || "Not stated")}</span>
-      <span class="cell vote"><span class=lab>Proposed</span>${esc(r.vote)}</span>
+      <span class=cell><span class=lab>Styret</span>${esc(r.board || "Ikke oppgitt")}</span>
+      <span class="cell vote"><span class=lab>Foreslått</span>${esc(r.vote)}</span>
       <span class="cell conf"><span class=track><i style="width:${r.score}%"></i></span><span>${r.score}%</span></span>
-      <span class="cell${r.review === "Person" ? " person" : ""}"><span class=lab>Review</span>${esc(r.review)}</span>
+      <span class="cell${r.review === "Person" ? " person" : ""}"><span class=lab>Gjennomgang</span>${esc(REVIEW[r.review] || r.review)}</span>
       ${chevron}
     </summary>
     <div class=body>${body}</div>
@@ -115,7 +116,7 @@ const icon = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 function filters() {
   const box = document.getElementById("filters");
-  const opts = [["all", "All"], ["unclear", LANES.unclear], ["against", LANES.against], ["with", LANES.with]];
+  const opts = [["all", "Alle"], ["unclear", LANES.unclear], ["against", LANES.against], ["with", LANES.with]];
   box.innerHTML = opts.map(([k, t], i) =>
     `<button type=button data-key=${k} aria-pressed=${i === 0}>${icon(k)}<span>${t}</span></button>`).join("");
   box.addEventListener("click", e => {
@@ -131,22 +132,22 @@ function actions() {
     const more = e.target.closest(".more");
     if (more) {
       const open = more.parentElement.classList.toggle("open");
-      more.textContent = open ? "Read less" : "Read more";
+      more.textContent = open ? "Les mindre" : "Les mer";
       return;
     }
     const btn = e.target.closest(".copy");
     if (btn) {
       const r = ITEMS.find(x => String(x.item) === btn.closest(".prop").dataset.item);
       await copy(context(r));
-      btn.querySelector("span").textContent = "Copied";
-      setTimeout(() => btn.querySelector("span").textContent = "Copy", 1600);
+      btn.querySelector("span").textContent = "Kopiert";
+      setTimeout(() => btn.querySelector("span").textContent = "Kopier", 1600);
     }
   });
   const toggle = document.getElementById("toggle");
   toggle.addEventListener("click", () => {
-    const open = toggle.textContent === "Open all";
+    const open = toggle.textContent === "Åpne alle";
     document.querySelectorAll(".prop:not([hidden])").forEach(p => p.open = open);
-    toggle.textContent = open ? "Close all" : "Open all";
+    toggle.textContent = open ? "Lukk alle" : "Åpne alle";
   });
 }
 
@@ -167,7 +168,7 @@ document.fonts.ready.then(dividers);
 // Unclear proposals still waiting for a person. A logged one gets a green dot and drops out of the count.
 function reviewed() {
   document.getElementById("reviewed").innerHTML =
-    `<strong>${document.querySelectorAll(".prop[data-lane=unclear]:not(.approved)").length}</strong><span>proposals to review</span>`;
+    `<strong>${document.querySelectorAll(".prop[data-lane=unclear]:not(.approved)").length}</strong><span>forslag å gjennomgå</span>`;
 }
 
 head();

@@ -229,7 +229,7 @@ class Pay(unittest.TestCase):
         r = dict(lane=desk.UNCLEAR, item="1", meeting_id="m", draft="FOR", mgmt_rec="FOR", proposal_text="x", confidence="Low", flags="", read_first=True)
         self.assertTrue(sheet.item(r)["read_first"])
         self.assertFalse(sheet.item(dict(r, read_first=False))["read_first"])
-        self.assertIn("Read first", sheet.asset("report.js"), "the page draws the tag")
+        self.assertIn("Les først", sheet.asset("report.js"), "the page draws the tag")
 
     def test_read_first_never_clears_an_item_or_changes_a_vote(self):
         import review
@@ -241,7 +241,7 @@ class Pay(unittest.TestCase):
         import sheet
         r = dict(lane=desk.UNCLEAR, item="1", meeting_id="m", draft="FOR", mgmt_rec="FOR", proposal_text="x", confidence="Low", flags="", pay="CEO pay $32.4m for fiscal 2024")
         self.assertEqual(sheet.item(r)["pay"], "CEO pay $32.4m for fiscal 2024")
-        self.assertIn("Pay facts:", sheet.asset("report.js"), "the page shows the reasons")
+        self.assertIn("Lønnsfakta:", sheet.asset("report.js"), "the page shows the reasons")
 
     def test_saved_pay_files_hold_no_vote_from_2026(self):
         import joblib
