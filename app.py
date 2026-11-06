@@ -121,7 +121,7 @@ CONTROLS = """<dialog class=logbox id=logbox>
       ask({title: 'Log decision', what: `Proposal ${row.dataset.item}: ${title}. Decision ${decision}, proposed ${row.dataset.vote}.`,
         item: row.dataset.item, decision, needsReason: decision !== row.dataset.vote,
         extra: {proposed_vote: row.dataset.vote, lane: LANE[row.dataset.lane], confidence: row.dataset.score + ' %'},
-        done: () => { state.textContent = `Logged ${decision}`; }});
+        done: () => { state.textContent = `Logged ${decision}`; row.classList.add('approved'); }});
     };
     row.querySelector('.body').append(act);
   });
@@ -133,7 +133,7 @@ CONTROLS = """<dialog class=logbox id=logbox>
   batch.querySelector('button').onclick = () => ask({title: 'Approve the batch',
     what: `Every proposal With the board on this sheet, ${document.querySelectorAll('details.prop[data-lane=with]').length} in all, is approved as proposed.`,
     item: 'with board batch', decision: 'approve with board batch', needsReason: false, extra: {},
-    done: () => { batch.querySelector('.logged').textContent = 'Batch approved'; }});
+    done: () => { batch.querySelector('.logged').textContent = 'Batch approved'; document.querySelectorAll('details.prop[data-lane=with]').forEach(r => r.classList.add('approved')); }});
 })();
 </script>"""
 

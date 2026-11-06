@@ -124,9 +124,11 @@ input[type=text],input[type=password],textarea,select{background:var(--box);bord
 input[type=text]::placeholder,textarea::placeholder{color:var(--text2)}
 input:focus,textarea:focus,select:focus{outline:2px solid #f5f2eb;outline-offset:2px}
 /* The decision sits to the right of the text, under the copy button, with Log below the choice. */
-.body>.act{grid-column:2;grid-row:1/span 40;align-self:start;display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-top:64px}
+/* Bottom right of the open proposal, Log under the choice. */
+.body>.act{grid-column:2;grid-row:1/span 40;align-self:end;display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-top:64px}
 .act .btn,.batch .btn{padding:10px 22px}
 .logged{font-size:15px;font-weight:600;color:var(--gold)}
+.prop.approved .title strong::after{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;background:#3dd173;margin-left:10px;vertical-align:middle} /* --color-infographics-emerald */
 .batch{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:-24px 0 32px}
 .logbox{background:var(--midnight);color:var(--text);border:1px solid var(--stroke);padding:0;width:min(520px,calc(100vw - 32px))}
 .logbox::backdrop{background:#0006}
