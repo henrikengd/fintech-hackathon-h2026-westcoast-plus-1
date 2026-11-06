@@ -26,35 +26,35 @@ TYPES = (".pdf", ".htm", ".html", ".txt")
 UPLOAD = """<header class=wrap>
   <p class=eyebrow>Legg til data</p>
   <h1>Voting Desk</h1>
-  <p class=lead>Drop a general meeting agenda or proxy statement. Every proposal gets a proposed vote, a confidence and the guideline behind it.</p>
+  <p class=lead>Slipp inn en innkalling eller saksliste til en generalforsamling. Hvert forslag får en foreslått stemme, en konfidens og retningslinjen den bygger på.</p>
 </header>
 <main class=wrap>
   <div class=upload>
     <div class=drop id=drop tabindex=0>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-      <strong>Drop a file here</strong><span>or click to choose. PDF, HTML or text.</span>
+      <strong>Slipp en fil her</strong><span>eller klikk for å velge. PDF, HTML eller tekst.</span>
       <input id=file type=file accept=".pdf,.htm,.html,.txt" hidden>
     </div>
-    <textarea id=text placeholder="Or paste an agenda" aria-label="Agenda text"></textarea>
-    <p id=keyline><label>Anthropic API key <input id=key type=password autocomplete=off></label> Kept in memory on this computer.</p>
-    <p class=go><button class="btn primary" id=go type=button>Review pasted agenda</button><span id=status role=status></span></p>
+    <textarea id=text placeholder="Eller lim inn en saksliste" aria-label="Saksliste"></textarea>
+    <p id=keyline><label>Anthropic API-nøkkel <input id=key type=password autocomplete=off></label> Holdes bare i minnet på denne maskinen.</p>
+    <p class=go><button class="btn primary" id=go type=button>Analyser innlimt saksliste</button><span id=status role=status></span></p>
   </div>
   <section>
-    <h2>Previous reports</h2>
+    <h2>Tidligere rapporter</h2>
     <div class=tiles>SAMPLES</div>
   </section>
 </main>"""
 SCRIPT = """<script>
 const $ = id => document.getElementById(id), go = $('go'), status = $('status');
 async function send(body, name) {
-  go.disabled = true; status.textContent = 'Reading the document. This takes up to a minute.';
+  go.disabled = true; status.textContent = 'Leser dokumentet. Det tar opptil ett minutt.';
   try {
     const reply = await fetch('/review', {method: 'POST', body, headers: {'X-Name': encodeURIComponent(name), 'X-Key': $('key').value.trim()}});
     const data = await reply.json();
     if (data.url) return location = data.url;
     status.textContent = data.error;
     if (reply.status === 401) $('keyline').hidden = false;
-  } catch { status.textContent = 'That file could not be sent. It may be too large.'; }
+  } catch { status.textContent = 'Filen kunne ikke sendes. Den er kanskje for stor.'; }
   go.disabled = false;
 }
 const take = f => f && send(f, f.name);
@@ -64,7 +64,7 @@ $('file').onchange = e => take(e.target.files[0]);
 $('drop').ondragover = e => { e.preventDefault(); $('drop').classList.add('over'); };
 $('drop').ondragleave = () => $('drop').classList.remove('over');
 $('drop').ondrop = e => { e.preventDefault(); $('drop').classList.remove('over'); take(e.dataTransfer.files[0]); };
-go.onclick = () => $('text').value.trim() ? send($('text').value, 'pasted.txt') : status.textContent = 'Paste an agenda first.';
+go.onclick = () => $('text').value.trim() ? send($('text').value, 'pasted.txt') : status.textContent = 'Lim inn en saksliste først.';
 </script>"""
 
 # Sign-off on a sheet: pick a vote in each proposal, press Log, and a dialog asks for name and reason.
@@ -151,7 +151,7 @@ def samples():
     """Earlier reports as tiles, newest first: live reviews and the samples picked by a fixed seed."""
     files = sorted((review.OUT / "sheets").glob("*.html"), key=lambda f: f.stat().st_mtime, reverse=True)
     tiles = [sheet.tile(data, f"/sheet/{f.name}") for f in files if (data := sheet.sheet_data(f.read_text(encoding="utf-8")))]
-    return "".join(tiles) or "<p>No reports yet.</p>"
+    return "".join(tiles) or "<p>Ingen rapporter ennå.</p>"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -171,7 +171,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/":
-            page = sheet.dark_page("Voting Desk", UPLOAD.replace("SAMPLES", samples()), SCRIPT)
+            page = sheet.dark_page("Voting Desk", UPLOAD.replace("SAMPLES", samples()), SCRIPT, lang="no")
             return self.send(200, page.replace("<p id=keyline>", "<p id=keyline hidden>") if os.getenv("ANTHROPIC_API_KEY", "").strip() else page)
         if self.path.startswith("/sheet/"):
             path = review.OUT / "sheets" / Path(unquote(self.path[7:])).name

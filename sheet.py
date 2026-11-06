@@ -134,9 +134,9 @@ def logo(company):
     return data_uri(path, "image/png") if path.is_file() else None
 
 
-def dark_page(title, body, script=""):
+def dark_page(title, body, script="", lang="en"):
     bar = f'<div class=topbar><div class=bar><img class=logo src="{data_uri(ASSETS / "nbim-logo.svg", "image/svg+xml")}" alt="Norges Bank Investment Management">{NAV}</div></div>'
-    return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    return (f'<!doctype html><html lang="{lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f"<title>{escape(title)}</title>{HEAD.replace('300;400;500', '400;500;600')}<style>{asset('style.css')}</style></head>"
             f"<body>{bar}{body}{script}</body></html>")
 
@@ -229,9 +229,7 @@ def tile(data, href):
     """One earlier report on the upload page."""
     c = data.get("counts", {})
     total = sum(c.values())
-    mark = logo(data["company"])
-    picture = f'<img src="{mark}" alt="{escape(data["company"], quote=True)}">' if mark else f'<span class=word>{escape(data["company"])}</span>'
     return (f'<a class=tile href="{escape(href, quote=True)}"><h3>{escape(data["company"])}</h3>'
-            f'<p class=sub><span class=place>{escape(data.get("country") or "Country not stated")} {flag(data.get("country"))}</span><br>General meeting {escape(data["meeting_date"])}</p>'
-            f'<div class=stats><p><b>{total} proposals</b></p><p>{c.get("against", 0)} against the board</p><p>{c.get("unclear", 0)} unclear</p>'
-            f'<p>{c.get("with", 0)} with the board</p></div><div class=mark>{picture}</div></a>')
+            f'<p class=sub><span class=place>{escape(data.get("country") or "Land ikke oppgitt")} {flag(data.get("country"))}</span><br>Generalforsamling {escape(data["meeting_date"])}</p>'
+            f'<div class=stats><p><b>{total} forslag</b></p><p>{c.get("against", 0)} mot styret</p><p>{c.get("unclear", 0)} uavklart</p>'
+            f'<p>{c.get("with", 0)} med styret</p></div></a>')
