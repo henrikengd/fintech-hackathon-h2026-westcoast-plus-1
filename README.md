@@ -1,55 +1,80 @@
-# westcoast + 1
+# Voting Desk
 
-FinTech Hackathon H2026
+Case 1, Stemmegivningsagenten. Westcoast + 1, FinTech Hackathon H2026. Student prototype, not an NBIM product.
 
-## Arbeidsplan
+Voting Desk reads a general meeting agenda and proposes FOR, MOT or AVSTÅ on every proposal, with a confidence and the guideline it rests on. The agent proposes, the code checks, and a person decides. Start with [Kravrespons.pdf](Kravrespons.pdf).
 
-[Status, funn og åpne spørsmål](docs/features/claude-voting-assistant/README.md) samler notatene fra avklaringen og viser hvor arbeidet tas opp igjen.
+## Run it
 
-[Prosjekt](https://github.com/users/henrikengd/projects/3) · [Hovedissue](https://github.com/henrikengd/fintech-hackathon-h2026-westcoast-plus-1/issues/1) · [Spesifikasjon](docs/features/claude-voting-assistant/spec.md)
+Python 3.12 or newer on Windows x64, Apple silicon or Linux x64 (`python3` on Mac):
 
-Gjennomføring og verifikasjon står i [leveransejournalen](docs/features/claude-voting-assistant/delivery.md).
-
-## Kjør løsningen
-
-Bruk macOS, Linux eller WSL. Installer [uv](https://docs.astral.sh/uv/getting-started/installation/) og Poppler (`pdftotext`). Kjør fra repoets rot.
-
-```sh
-uv sync --locked
-mkdir -p data/raw
-curl -fL 'https://www.nbim.no/contentassets/cbee6983c7d044a6a6d2f286ed5fa3df/global-voting-guildeines_2025.pdf' -o data/raw/nbim-2025-linked.pdf
-curl -fL 'https://investors.sprinklr.com/financial-information/all-sec-filings/content/0001140361-25-017121/0001140361-25-017121.pdf' -o data/raw/sprinklr-2025-proxy.pdf
-uv run --no-sync python -m voting_assistant index --manifest data/policies/nbim-2025.json
-uv run --no-sync python scripts/prepare_example.py --sprinklr-proxy data/raw/sprinklr-2025-proxy.pdf --output-dir data/raw/development-r2
-uv run --no-sync python scripts/prepare_holdout.py --development-manifest data/raw/development-r2/manifest.json --download
+```bash
+python app.py
 ```
 
-Kopier `.env.example` til `.env` hvis du ikke allerede har en lokal fil. Sett `ANTHROPIC_API_KEY`, modell-ID og gjeldende input- og outputpriser per million tokens for den valgte modellen. Miljøvariabler satt i terminalen går foran `.env`. Modell og kostnad registreres i rapporten. [Anthropics priser](https://platform.claude.com/docs/en/about-claude/pricing).
+The first start sets itself up and takes up to four minutes. Drop a filing, for example `data/meetings/us/BRCB_2026_05_27.htm`. The Claude key is in `.env`.
 
-Etter oppsett kjører denne ene kommandoen vurdering og poengberegning for de tre frosne testmøtene med 21 stemmevalg. CCC og Sprinklr er utviklingsdata. Testuttrekkene er låst til Poppler-resultatet som ble kontrollert; avvik i uttrekksbytes stopper klargjøringen.
+Plugin, no key: unzip this folder, then upload the zip for your system from `plugin/` in Claude. Your own Claude drafts one pass, which is not the tested setup.
 
-```sh
-uv run --no-sync python -m voting_assistant evaluate --manifest data/raw/holdout-2025/manifest.json --output data/raw/holdout-2025/run.json --max-cost-usd 0.80
+The pages are drawn in NBIM's dark style from `assets/`: `style.css`, `report.js`, the NBIM logo and company logos. `sheet.py` fills them with data.
+
+To reproduce the numbers, with no key:
+
+```bash
+python run.py
 ```
 
-Bruk en ny rapportsti ved en ny måling. Bruk `--resume` for å fortsette med samme manifest og konfigurasjon. Alle forsøk beholdes; et nytt modellresultat er ikke garantert å bli identisk. Rapporten viser MOT-presisjon, MOT-recall, dekning og sammenligning med styrets anbefalinger. [Kildegrunnlaget](docs/data-access.md) beskriver møtene og begrensningene. [Chatoppsettet](docs/claude-setup.md) beskriver den separate demoen i ChatGPT eller Claude. Chatabonnementet brukes i nettleseren; API-kjøringen trenger en egen Anthropic API-nøkkel.
+## How it decides
 
-Modell brukt 5. november 2026 var `claude-haiku-5-5`, med `ANTHROPIC_INPUT_USD_PER_MTOK=0.10` og `ANTHROPIC_OUTPUT_USD_PER_MTOK=0.50`. Kontroller prisene før nye kjøringer. Programmet stopper når input overstiger 100 000 tokens. Modellens verktøysvar kan øke input underveis selv om første forespørsel er mindre.
+1. Claude reads the agenda and writes three drafts from NBIM's guidelines and the company's earlier votes.
+2. A local text model gives each proposal a risk score.
+3. Python checks every quote. If the drafts disagree, a check fails, or the score is at or above 0.22, a person reads it.
+4. The rest is signed off in a batch.
 
-[Liveverifikasjonen](docs/features/claude-voting-assistant/live-verification.md) viser faktisk resultat, første forsøk, omkjøringer, kilder og kostnad. Første sluttkjøring behandlet to av tre møter ferdig, ga ingen automatiske anbefalinger og stoppet på Snowflake etter at konteksten vokste. Dette er en prototype for etterprøvbar manuell gjennomgang, med foreløpig svak automatisk dekning.
+The 0.22 threshold is where about 90% of votes against the board lay above the cut in 2024 and 2025, at about 1,000 other companies. It is the stewardship team's choice.
 
-Kjør lokale regresjonstester med `uv run --no-sync python -m unittest discover -s tests -v`.
+## Result
 
-## Datakilder
+We locked the system and ran it once on 1,000 meetings from 2026, at 751 companies outside development. 9,218 proposals, 454 against the board.
 
-Arrangøren har levert `real_votes.csv` og `npx_votes.csv`. Se [datakontrollen](docs/features/claude-voting-assistant/data-review.md) og [undersøkelsen av N-PX-feltene](docs/features/claude-voting-assistant/research/npx-provenance.md).
+| | Result |
+|---|---:|
+| Votes against the board that reach a person | **92.7%** (89.7 to 95.2) |
+| Proposals signed off in a batch | **48.4%** (46.5 to 50.3) |
+| Precision and recall when the agent proposes against the board | **46.1%** and **44.5%** |
 
-Originalfilene oppbevares lokalt i `data/raw/` og følger ikke Git. De trengs bare hvis dere vil importere eller undersøke arrangørens rådata; den dokumenterte reproduksjonen av det frosne utvalget bruker offentlige kilder og krever ingen av CSV-filene. [Kontrollsummer](docs/features/claude-voting-assistant/data-inventory.json) identifiserer riktig versjon. Opprinnelige eksportkilder og vilkår for viderepublisering er ennå ikke dokumentert.
+On MOT votes, precision is 40.3% and recall 54.7%, against 59.7% and 9.2% for following the board.
 
-Stemmedata brukes som evalueringsreferanse. RAG skal søke i daterte retningslinjer. N-PX-filen holdes adskilt fra NBIM-målingen til opphav og felter er kontrollert.
+Our own local history model matches the system on routing when history stops on 1 January, 48.5% against 48.4%. It gives no vote, reason or quote, which is what Claude adds. Henrik's local model did worse, 44.7% at equal reach. Eleven other ideas failed tests written beforehand, and `results/metrics.json` lists them.
 
-## KI og kodekreditering
+The agent followed a planted instruction in none of 20 filings. Indirect wording passes our scan.
 
-- OpenAI Codex ble brukt til repooppsett, avklaring av scope, undersøkelse av Claude-integrasjonen og utarbeiding av spesifikasjon og GitHub-oppgaver, samt datakontroll, kildeundersøkelse, implementering og verifikasjon.
+## Where to check
 
-Startpakken ga oppgavebeskrivelsen og evalueringskravene. Koden bruker den offisielle Python-SDK-en for MCP og Anthropic-klienten. Versjonene er låst i `uv.lock`.
+Method: this file and `Kravrespons.pdf`. Evaluation: `results/metrics.json`, `python run.py` and `python test_desk.py`. Decision support: `results/sheets/`. Robustness: `results/document_resistance_20.json`, and how the sealed set was drawn in `selection/`.
+
+## Limits
+
+The lane is weak after June, 14 of 63 right. Auditor proposals are weak, 20 of 32 reached. The test read ballot text, so document reading is not evaluated. 73 of 79 rules use today's text at every date. Claude may have seen NBIM's votes, which we cannot rule out. Details are in `results/metrics.json`.
+
+After the sealed run we changed labels, messages and live-path fixes, and no sealed lane moved, so some code differs from `results/freeze_v3.json`. `desk.py` and `rules.json` match it. The history model was built after the run, and its comparison column was removed from `results/items_sealed.csv`.
+
+## One more week
+
+1. Facts from filings outside the US, including auditor fees.
+2. Opus on unused meetings, with precision named up front.
+3. A local language model, with routing in-house too.
+4. Position size, so the largest holdings come first.
+
+## Data
+
+- NBIM votes, supplied by the organisers: https://www.nbim.no/en/responsible-investment/voting/our-voting-records/
+- NBIM voting API, cleared with the organisers: https://vd.a.nbim.no/v1
+- Global voting guidelines: https://www.nbim.no/en/responsible-investment/voting/global-voting-guidelines/
+- SEC EDGAR: https://www.sec.gov/edgar
+
+## AI use and credits
+
+Claude Sonnet 5.5 drafts. Claude Code and OpenAI Codex helped with research, code and reports, and we checked the results. API spend was about $170.
+
+Oskar did the error analysis, and Henrik built the local models. Henrik's other experiments are on branch `NK-experiments`. Libraries: anthropic, scikit-learn, pandas, pypdf, mcp. Font: Hanken Grotesk, SIL Open Font License.
