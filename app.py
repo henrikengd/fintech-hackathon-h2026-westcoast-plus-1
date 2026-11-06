@@ -122,9 +122,14 @@ CONTROLS = """<dialog class=logbox id=logbox>
     const extra = {proposed_vote: row.dataset.vote, lane: LANE[row.dataset.lane], confidence: row.dataset.score + ' %'};
     const title = row.querySelector('.title strong').textContent;
     if (row.dataset.lane !== 'unclear') {  // a clear proposal keeps its vote unless a person changes it
-      act.innerHTML = '<button class=btn type=button>Endre stemme</button>';
+      act.innerHTML = '<button class="btn primary" type=button>Godkjenn</button><button class=btn type=button>Endre stemme</button>';
       act.append(state);
-      act.querySelector('.btn').onclick = () => ask({title: 'Endre stemme',
+      const [approve, change] = act.querySelectorAll('.btn');
+      approve.onclick = () => ask({title: 'Godkjenn stemme',
+        what: `Forslag ${row.dataset.item}: ${title}. Foreslått ${row.dataset.vote}.`, item: row.dataset.item, decision: row.dataset.vote,
+        needsReason: false, extra,
+        done: () => { state.textContent = `Godkjent ${row.dataset.vote}`; row.classList.add('approved'); }});
+      change.onclick = () => ask({title: 'Endre stemme',
         what: `Forslag ${row.dataset.item}: ${title}. Foreslått ${row.dataset.vote}.`, item: row.dataset.item, decision: '',
         choices: ['FOR', 'MOT', 'AVSTÅ'].filter(v => v !== row.dataset.vote), needsReason: true, extra,
         done: () => { state.textContent = `Endret til ${pending.decision}`; row.classList.add('approved'); }});
