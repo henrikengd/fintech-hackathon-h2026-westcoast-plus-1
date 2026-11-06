@@ -72,6 +72,8 @@ h2{font-size:28px;line-height:1.25;font-weight:600;margin:0}
 .seg button{display:inline-flex;align-items:center;gap:8px;background:none;border:0;border-radius:999px;padding:8px 16px;font-size:15px;font-weight:500;white-space:nowrap}
 .seg button:hover{background:var(--track)}
 .seg button[aria-pressed=true]{background:var(--gold);color:var(--midnight)}
+/* The vote choice is white, so the gold Log button stands out as the action. */
+.act .seg button[aria-pressed=true],#logvote button[aria-pressed=true]{background:#fff;color:var(--midnight)}
 .seg svg{width:18px;height:18px;flex:none}
 .cols,.prop summary{display:grid;grid-template-columns:40px minmax(0,1fr) 84px 92px 170px 76px 24px;gap:24px;align-items:center}
 .cols{padding:0 25px 12px;font-size:15px;font-weight:600}
