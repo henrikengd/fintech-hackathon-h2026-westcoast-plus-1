@@ -73,6 +73,7 @@ CONTROLS = """<dialog class=logbox id=logbox>
   <form method=dialog id=logform>
     <h3 id=logtitle>Log decision</h3>
     <p id=logwhat></p>
+    <div class=seg id=logvote role=group aria-label="New vote" hidden></div>
     <label>Your name <input type=text id=who autocomplete=name required></label>
     <label>Reason <textarea id=why rows=4></textarea></label>
     <p class=logerror id=logerror role=alert></p>
@@ -94,14 +95,22 @@ CONTROLS = """<dialog class=logbox id=logbox>
     document.getElementById('logtitle').textContent = task.title;
     document.getElementById('logwhat').textContent = task.what;
     why.required = task.needsReason; why.placeholder = task.needsReason ? 'Why you change the proposed vote' : 'Optional';
+    const vote = document.getElementById('logvote');
+    vote.hidden = !task.choices;  // Change vote: the new vote is one of the other two
+    if (task.choices) vote.innerHTML = task.choices.map((v, i) => `<button type=button data-v="${v}" aria-pressed=${i === 0}>${v}</button>`).join('');
     box.showModal(); (who.value ? why : who).focus();
   }
   document.getElementById('logcancel').onclick = () => box.close();
+  document.getElementById('logvote').onclick = e => {
+    const b = e.target.closest('button');
+    if (b) document.querySelectorAll('#logvote button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  };
   form.addEventListener('submit', async e => {
     e.preventDefault();
     if (!who.value.trim()) { error.textContent = 'Enter your name.'; return who.focus(); }
     if (pending.needsReason && !why.value.trim()) { error.textContent = 'A changed vote needs a reason.'; return why.focus(); }
     try { localStorage.setItem('reviewer', who.value.trim()); } catch {}
+    if (pending.choices) pending.decision = document.querySelector('#logvote [aria-pressed=true]').dataset.v;
     const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item: pending.item,
       decision: pending.decision, reviewer: who.value.trim(), sheet: sheetName, reason: why.value.trim(), ...pending.extra})});
     if (!r.ok) { error.textContent = (await r.json()).error; return; }
@@ -111,17 +120,28 @@ CONTROLS = """<dialog class=logbox id=logbox>
   document.querySelectorAll('details.prop').forEach(row => {
     const act = document.createElement('div'), state = document.createElement('span');
     act.className = 'act';
+    state.className = 'logged'; state.setAttribute('role', 'status');
+    const extra = {proposed_vote: row.dataset.vote, lane: LANE[row.dataset.lane], confidence: row.dataset.score + ' %'};
+    const title = row.querySelector('.title strong').textContent;
+    if (row.dataset.lane !== 'unclear') {  // a clear proposal keeps its vote unless a person changes it
+      act.innerHTML = '<button class=btn type=button>Change vote</button>';
+      act.append(state);
+      act.querySelector('.btn').onclick = () => ask({title: 'Change vote',
+        what: `Proposal ${row.dataset.item}: ${title}. Proposed ${row.dataset.vote}.`, item: row.dataset.item, decision: '',
+        choices: ['FOR', 'MOT', 'AVSTÅ'].filter(v => v !== row.dataset.vote), needsReason: true, extra,
+        done: () => { state.textContent = `Changed to ${pending.decision}`; row.classList.add('approved'); }});
+      return row.querySelector('.body').append(act);
+    }
     act.innerHTML = '<div class=seg role=group aria-label="Decision">' + ['FOR', 'MOT', 'AVSTÅ'].map(v =>
       `<button type=button data-v="${v}" aria-pressed=${v === row.dataset.vote}>${v}</button>`).join('') + '</div><button class="btn primary" type=button>Log</button>';
-    state.className = 'logged'; state.setAttribute('role', 'status'); act.append(state);
+    act.append(state);
     const seg = act.querySelector('.seg'), log = act.querySelector('.btn');
     seg.onclick = e => { const b = e.target.closest('button'); if (b) seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); };
     log.onclick = () => {
-      const decision = seg.querySelector('[aria-pressed=true]').dataset.v, title = row.querySelector('.title strong').textContent;
+      const decision = seg.querySelector('[aria-pressed=true]').dataset.v;
       ask({title: 'Log decision', what: `Proposal ${row.dataset.item}: ${title}. Decision ${decision}, proposed ${row.dataset.vote}.`,
         item: row.dataset.item, decision, needsReason: decision !== row.dataset.vote,
-        extra: {proposed_vote: row.dataset.vote, lane: LANE[row.dataset.lane], confidence: row.dataset.score + ' %'},
-        done: () => { state.textContent = `Logged ${decision}`; row.classList.add('approved'); }});
+        extra, done: () => { state.textContent = `Logged ${decision}`; row.classList.add('approved'); }});
     };
     row.querySelector('.body').append(act);
   });
@@ -134,6 +154,7 @@ def samples():
     files = sorted((review.OUT / "sheets").glob("*.html"), key=lambda f: f.stat().st_mtime, reverse=True)
     tiles = [sheet.tile(data, f"/sheet/{f.name}") for f in files if (data := sheet.sheet_data(f.read_text(encoding="utf-8")))]
     return "".join(tiles) or "<p>No reports yet.</p>"
+
 
 class Handler(BaseHTTPRequestHandler):
     def send(self, code, body, kind="text/html; charset=utf-8"):
