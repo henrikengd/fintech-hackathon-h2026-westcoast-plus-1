@@ -125,15 +125,6 @@ CONTROLS = """<dialog class=logbox id=logbox>
     };
     row.querySelector('.body').append(act);
   });
-
-  const bar = document.querySelector('.bar-head'), batch = document.createElement('div');
-  batch.className = 'batch';
-  batch.innerHTML = '<button class=btn type=button>Approve With board batch</button><span class=logged role=status></span>';
-  bar.after(batch);
-  batch.querySelector('button').onclick = () => ask({title: 'Approve the batch',
-    what: `Every proposal With the board on this sheet, ${document.querySelectorAll('details.prop[data-lane=with]').length} in all, is approved as proposed.`,
-    item: 'with board batch', decision: 'approve with board batch', needsReason: false, extra: {},
-    done: () => { batch.querySelector('.logged').textContent = 'Batch approved'; document.querySelectorAll('details.prop[data-lane=with]').forEach(r => r.classList.add('approved')); }});
 })();
 </script>"""
 

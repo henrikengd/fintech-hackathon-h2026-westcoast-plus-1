@@ -47,7 +47,8 @@ h1{font-size:72px;line-height:1.05;font-weight:600;letter-spacing:-1.5px;margin:
 .flag{width:24px;height:18px;display:block;object-fit:cover;flex:none}
 
 /* Overview */
-.overview{display:grid;grid-template-columns:auto 1fr;gap:16px;margin-top:48px}
+.overview{display:grid;grid-template-columns:auto auto 1fr;gap:16px;margin-top:48px}
+.overview>.summary:last-child{display:flex;flex-direction:column;justify-content:center}
 .summary{background:var(--box);border:1px solid var(--stroke);padding:32px}
 .total{aspect-ratio:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
 .total strong{display:block;font-size:64px;line-height:1;font-weight:600;letter-spacing:-2px}
@@ -126,10 +127,9 @@ input:focus,textarea:focus,select:focus{outline:2px solid #f5f2eb;outline-offset
 /* The decision sits to the right of the text, under the copy button, with Log below the choice. */
 /* Bottom right of the open proposal, Log under the choice. */
 .body>.act{grid-column:2;grid-row:1/span 40;align-self:end;display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-top:64px}
-.act .btn,.batch .btn{padding:10px 22px}
+.act .btn{padding:10px 22px}
 .logged{font-size:15px;font-weight:600;color:var(--gold)}
 .prop.approved .title strong::after{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;background:#3dd173;margin-left:10px;vertical-align:middle} /* --color-infographics-emerald */
-.batch{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:-24px 0 32px}
 .logbox{background:var(--midnight);color:var(--text);border:1px solid var(--stroke);padding:0;width:min(520px,calc(100vw - 32px))}
 .logbox::backdrop{background:#0006}
 .logbox form{display:flex;flex-direction:column;gap:16px;padding:32px;background:var(--box)}
@@ -183,7 +183,8 @@ main.wrap{padding-bottom:96px}
   .info{font-size:15px}
   .meeting,.lead{font-size:17px}
   .summary{padding:20px}
-  .overview{grid-template-columns:1fr}
+  .overview{grid-template-columns:1fr 1fr}
+  .overview>.summary:last-child{grid-column:1/-1}
   .total{aspect-ratio:auto}
   .total strong{font-size:44px}
   .lanes strong{font-size:36px}
@@ -201,7 +202,6 @@ main.wrap{padding-bottom:96px}
   .body{padding:64px 16px 24px;display:block}
   .body>.act{align-items:flex-start;margin-top:28px}
   .copy{top:16px;left:16px;right:auto}
-  .batch{margin:-32px 0 24px}
   .logbox form{padding:24px}
   .drop{padding:48px 16px}
   .tiles{grid-template-columns:1fr}

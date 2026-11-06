@@ -164,7 +164,15 @@ function dividers() {
 addEventListener("resize", dividers);
 document.fonts.ready.then(dividers);
 
+// Proposals logged on this page, counted from the green dots the sign-off sets.
+function reviewed() {
+  document.getElementById("reviewed").innerHTML =
+    `<strong>${document.querySelectorAll(".prop.approved").length}</strong><span>proposals reviewed</span>`;
+}
+
 head();
+reviewed();
+new MutationObserver(reviewed).observe(document.getElementById("list"), {subtree: true, attributes: true, attributeFilter: ["class"]});
 dividers();
 document.getElementById("list").innerHTML = ITEMS.map(proposal).join("");
 filters();

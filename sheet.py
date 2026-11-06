@@ -201,6 +201,7 @@ def review_sheet(frame, cost=None, drafted_by=None):
   {f'<p class=notice><b>Not fully read:</b> {escape(data["notice"])}</p>' if data["notice"] else ""}
   <div class=overview>
     <div class="summary total" id=total></div>
+    <div class="summary total" id=reviewed></div>
     <div class=summary><div class=lanes id=lanes></div><div class=split id=split aria-hidden="true"></div></div>
   </div>
 </header>
