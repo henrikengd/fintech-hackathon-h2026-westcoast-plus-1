@@ -1,0 +1,44 @@
+{
+ "frozen_at": "2026-11-06T02:43:33.804315+00:00",
+ "model": "claude-sonnet-5-5",
+ "effort": "medium",
+ "passes": 3,
+ "prompt_hash": "4ed6446643ed",
+ "start": "2026-01-01",
+ "lag_days": 5,
+ "screen": "results/screen.joblib",
+ "tau": "results/tau_unseen.json",
+ "failure_rule": "Transport errors are retried by the SDK. Anything still failed goes to Unclear and is never rerun.",
+ "agent_list": {
+  "file": "agent_sealed_list.csv",
+  "sha256": "d93b3f9cc5ff22f8bff9cad7d091c768e7f2da3cd57a8b86901f034b192db0bf",
+  "seed": 2026,
+  "asked": 60,
+  "listed": 60,
+  "us_meetings": 102,
+  "skipped": {
+   "no_sec_link": 0,
+   "no_proxy": 1
+  },
+  "rule": "Written before any agent run on sealed or dry meetings, and without reading the agent's holdout results. The agent stays the website default only if, on these proposals, it sends at least as many votes against the board to a person as three passes, its batch share is at most 5 points smaller, and at most 10% of meetings fail. Otherwise the default becomes three passes and the agent stays an option. The 5 and the 10% are our choices. Point estimates decide, because 60 meetings cannot separate small gaps. Paired company-clustered intervals are reported beside them."
+ },
+ "hashes": {
+  "boot.py": "27413baf6f6c7f813c47ae233deae791932e360ba6be47f40c6d295bc6c3d679",
+  "agent.py": "abe4e3f81fa18e10e66dcd0eacfd19d3256d7fc02bf4379690c3444d4e6967e7",
+  "desk.py": "484c37e856b9118a14b4a0fc8d6e78d5c63f851bc304403105a83e63b21092db",
+  "review.py": "808f793a47eeca5d833386c691add0328fa57055e9fdc7c5605a61d7d35f1acd",
+  "run.py": "54e621f506bdd8a1aa9a50c4ddeb9d4a48302b7936178f160493870448313dea",
+  "sheet.py": "f044f0cde99863b531c4b7a88cfde72de1da9b71ff27f26a312df9db441f352d",
+  "rules.json": "5e8e298140924bc944751097db2f22796988f6e38cbb9747af915737ac76f3d5",
+  "results/pay_model.joblib": "e8ac5d04c707a313f33c551222dcda8e5685a7c9e48be28944aa70a63ea7c195",
+  "results/pay_facts.csv": "8c63281004c0ead6a7dd3f9b03e56be81ce378dd81ce0a68408f83c958e633f7",
+  "results/pay_facts_unseen.csv": "36a8caf8977a299eb9c75e9413f6197f9b4472dcfae6da36788d2b8bfd34ad78",
+  "results/confidence.json": "b77a3a0118632273f804d33ef3758f1b1d3ea34e0891fa59a0ba4bc01d169529",
+  "results/type_rates.csv": "62cd91ac93e6f637fd11b6057f6648c27410bb5e320c6279c7e6e1b4b6cf7a23",
+  "results/items_val.csv": "cae9e38d03876644d31ac89028d755c342ddf64639886ca30cce93c5504eefc2",
+  "data/real_votes.csv": "71ba5135e7ba9d64c943f158bb510ffab53f34203f4c2875fc43352419e525e6",
+  "results/screen.joblib": "31d4eced390e1c3dacdb4ff5146e0ea45dd27a6bc47e925d70c6ffa885038649",
+  "results/tau_unseen.json": "10af30b81e474f3727d924e7186c659f8c594cf2f02201f676abfda9133a57ea",
+  "data/unseen_votes.csv": "6416d12adedd0d157461cd52f814d65cf32304484dcd27d5d7d11addc15ef9d3"
+ }
+}

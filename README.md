@@ -20,7 +20,7 @@ Python 3.12 or newer on Windows x64, Apple silicon or Linux x64 (`python3` on Ma
 python app.py
 ```
 
-The first start can take a few minutes, up to about four, because it installs everything into a local `.venv` and loads the vote record. Later starts take about half a minute. When the page opens, drop a filing, for example `data/meetings/us/BRCB_2026_05_27.htm`. The Claude key is in `.env`.
+The first start can take a few minutes, up to about four, because it installs everything into a local `.venv` and loads the vote record. Later starts take about half a minute. When the page opens, drop a filing, for example `voting_desk/data/meetings/us/BRCB_2026_05_27.htm`. The Claude key is in `voting_desk/.env`.
 
 Plugin, no key: unzip this folder, then upload the zip for your system from `plugin/` in Claude. It adds our checks to Claude as tools, through MCP. Your own Claude writes one draft and our code checks and sorts it. That is not the tested setup.
 
@@ -53,19 +53,19 @@ We locked the system and ran it once on 1,000 meetings from 2026, at 751 compani
 
 On MOT votes, precision is 40.3% and recall 54.7%, against 59.7% and 9.2% for following the board.
 
-A simple local model we built decides who reads what about as well as our system, 48.5% against 48.4% in the batch with history stopped on 1 January. It writes no vote, reason or quote. That is what Claude adds. A second local model we tried in the group did worse, 44.7% when the same share of votes reach a person. Eleven other ideas failed tests written beforehand, and `results/metrics.json` lists them.
+A simple local model we built decides who reads what about as well as our system, 48.5% against 48.4% in the batch with history stopped on 1 January. It writes no vote, reason or quote. That is what Claude adds. A second local model we tried in the group did worse, 44.7% when the same share of votes reach a person. Eleven other ideas failed tests written beforehand, and `voting_desk/results/metrics.json` lists them.
 
 The agent followed a planted instruction in none of 20 filings. Indirect wording passes our scan.
 
 ## Where to check
 
-Method: this file and `Kravrespons.pdf`. Evaluation: `results/metrics.json`, `python run.py` and `python test_desk.py`. Decision support: `results/sheets/`. Robustness: `results/document_resistance_20.json`, and how the sealed set was drawn in `selection/`.
+Method: this file and `Kravrespons.pdf`. Evaluation: `voting_desk/results/metrics.json`, `python run.py` and `python voting_desk/test_desk.py`. Decision support: `voting_desk/results/sheets/`. Robustness: `voting_desk/results/document_resistance_20.json`, and how the sealed set was drawn in `voting_desk/selection/`.
 
 ## Limits
 
-When the agent proposes against the board, it is weak after June, 14 of 63 right. Auditor proposals are weak, 20 of 32 reached. The test read ballot text, so document reading is not evaluated. 73 of 79 rules use today's text at every date. Claude may have seen NBIM's votes, which we cannot rule out. Details are in `results/metrics.json`.
+When the agent proposes against the board, it is weak after June, 14 of 63 right. Auditor proposals are weak, 20 of 32 reached. The test read ballot text, so document reading is not evaluated. 73 of 79 rules use today's text at every date. Claude may have seen NBIM's votes, which we cannot rule out. Details are in `voting_desk/results/metrics.json`.
 
-After the test we changed labels, messages and fixes on the website. No test result changed, but some code differs from `results/freeze_v3.json`. `desk.py` and `rules.json` match it. The history model was built after the run, and its comparison column was removed from `results/items_sealed.csv`.
+After the test we changed labels, messages and fixes on the website. No test result changed, but some code differs from `voting_desk/results/freeze_v3.json`. `voting_desk/desk.py` and `voting_desk/rules.json` match it. The history model was built after the run, and its comparison column was removed from `voting_desk/results/items_sealed.csv`.
 
 ## One more week
 
