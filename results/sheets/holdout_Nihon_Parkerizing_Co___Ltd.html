@@ -398,15 +398,14 @@ function dividers() {
 addEventListener("resize", dividers);
 document.fonts.ready.then(dividers);
 
-// Proposals logged on this page, counted from the green dots the sign-off sets.
+// Unclear proposals still waiting for a person. A logged one gets a green dot and drops out of the count.
 function reviewed() {
   document.getElementById("reviewed").innerHTML =
-    `<strong>${document.querySelectorAll(".prop.approved").length}</strong><span>proposals reviewed</span>`;
+    `<strong>${document.querySelectorAll(".prop[data-lane=unclear]:not(.approved)").length}</strong><span>proposals to review</span>`;
 }
 
 head();
-reviewed();
-new MutationObserver(reviewed).observe(document.getElementById("list"), {subtree: true, attributes: true, attributeFilter: ["class"]});
+new MutationObserver(reviewed).observe(document.getElementById("list"), {subtree: true, childList: true, attributes: true, attributeFilter: ["class"]});
 dividers();
 document.getElementById("list").innerHTML = ITEMS.map(proposal).join("");
 filters();
