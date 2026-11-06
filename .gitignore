@@ -1,11 +1,6 @@
-.DS_Store
 .env
-.env.*
-!.env.example
 .venv/
 __pycache__/
-*.py[cod]
-
-# Original data received from the organizer; provenance is documented separately.
-/data/raw/
-/data/index.json
+data/edgar/
+.installing
+.install.log

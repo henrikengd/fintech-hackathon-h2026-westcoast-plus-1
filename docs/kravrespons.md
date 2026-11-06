@@ -1,9 +1,0 @@
-# Kravrespons, case 1, westcoast + 1
-
-Vi har bygget en assistent som leser en hel innkalling og bruker NBIMs daterte retningslinjer gjennom MCP. API-løpet bruker Claude Haiku 5.5 og kontrollerer sitater før rapportering. Manglende grunnlag gir null anbefaling og konkret manuell sjekk. ChatGPT ble valgt til den personlige demoen etter at Claude traff chatkvoten. Chatten har ingen automatisk sitatvalidator.
-
-Tre nye, senere møter med 21 stemmevalg ble fryst før måling. NBIMs offentlige stemmeintensjoner er referanse og holdes utenfor modellinput. Første sluttkjøring ga 14 gyldige manuelle svar og syv tekniske feil. Et uendret gjenopptak fullførte alle møter med to FOR-anbefalinger og 19 manuelle svar, 9,52 % dekning. MOT-recall er 0/1 og MOT-presisjon udefinert i begge. Styrebaselinen har samme MOT-tellere. Resultatet dokumenterer foreløpig ingen merverdi i å finne MOT.
-
-62 tester og en ren installasjon med nye offentlige nedlastinger passerte. Alle fem utviklingssvar, de to anbefalingene og utvalgte manuelle testsvar er kontrollert mot originalkilder. Kontroll-/angrepspar i API og ChatGPT endret ikke stemmene. Chatten fikk likevel en feil sidehenvisning og mistet trykte kandidat-ID-er. Ett par beviser ikke generell robusthet. Kildekontekst er bevart, men enkelte manuelle begrunnelser er for strenge eller upresise.
-
-Samlet API-kostnad i denne runden er USD 0,1732962. README viser oppsett og én evalueringskommando. Neste forbedring er bedre faktadekning, mindre kontekstvekst og færre unødvendige manuelle sperrer. N-PX er utsatt. Historiske regelarkiver støtter de valgte møtedatoene, men ikke eksakte ikrafttredelsesgrenser. Tidsmålt samlet demo, siste gjenopprettingstest og endelig leveranseavstemming gjenstår etter brukerens beskjed om å stoppe og pushe. Detaljer og rapporthasher står i liveverifikasjonen.

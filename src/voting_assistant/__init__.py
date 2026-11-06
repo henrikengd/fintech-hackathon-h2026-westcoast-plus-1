@@ -1,1 +1,0 @@
-"""Source-backed voting assistance."""
