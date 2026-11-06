@@ -4,6 +4,14 @@ Case 1, Stemmegivningsagenten. Westcoast + 1, FinTech Hackathon H2026. Student p
 
 Voting Desk reads a general meeting agenda and proposes FOR, MOT or AVSTÅ on every proposal, with a confidence and the guideline it rests on. The agent proposes, the code checks, and a person decides. Start with [Kravrespons.pdf](Kravrespons.pdf).
 
+## Three ways to use it
+
+| What | For | Needs |
+|---|---|---|
+| `python app.py` | The website: drop a meeting document, get proposed votes, sign off | Python, key included |
+| `python run.py` | Reproduces the test results, no website | Python, no key |
+| Plugin | The same review inside Claude | Claude, Python |
+
 ## Run it
 
 Python 3.12 or newer on Windows x64, Apple silicon or Linux x64 (`python3` on Mac):
@@ -14,7 +22,7 @@ python app.py
 
 The first start can take a few minutes, up to about four, because it installs everything into a local `.venv` and loads the vote record. Later starts take about half a minute. When the page opens, drop a filing, for example `data/meetings/us/BRCB_2026_05_27.htm`. The Claude key is in `.env`.
 
-Plugin, no key: unzip this folder, then upload the zip for your system from `plugin/` in Claude. Your own Claude drafts one pass, which is not the tested setup.
+Plugin, no key: unzip this folder, then upload the zip for your system from `plugin/` in Claude. It adds our checks to Claude as tools, through MCP. Your own Claude writes one draft and our code checks and sorts it. That is not the tested setup.
 
 To reproduce the numbers, with no key:
 
