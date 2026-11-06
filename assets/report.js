@@ -46,8 +46,10 @@ function proposal(r) {
   if (r.lane === "unclear" && side(r)) tags += `<span class="tag ${side(r)}">${LANES[side(r)]}</span>`;
   if (r.read_first) tags += `<span class="tag first" title="Bare rekkefølge. Den foreslåtte stemmen er uendret.">Les først</span>`;
   // The applied rule is marked inside the full paragraph, so it is not repeated below.
-  const full = basisText(r), inside = r.quote && full.includes(r.quote);
-  const text = inside ? esc(full).replace(esc(r.quote), `<strong>${esc(r.quote)}</strong>`) : esc(full);
+  // Match as desk.verified does: curly and straight quotes count as the same. One for one, so positions carry over.
+  const full = basisText(r), plain = t => t.replace(/[’‘]/g, "'").replace(/[“”]/g, '"');
+  const at = r.quote ? plain(full).indexOf(plain(r.quote)) : -1, inside = at >= 0, end = at + (r.quote || "").length;
+  const text = inside ? `${esc(full.slice(0, at))}<strong>${esc(full.slice(at, end))}</strong>${esc(full.slice(end))}` : esc(full);
   let body = `<button class=copy type=button aria-label="Kopier konteksten til en språkmodell">${copyIcon}<span>Kopier</span></button>
     <p><b>Begrunnelse for utkastet:</b> ${esc(r.why)}</p>`;
   body += r.section

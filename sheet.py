@@ -105,7 +105,9 @@ ISO = {"Australia": "au", "Belgium": "be", "Bermuda": "bm", "Brazil": "br", "Bri
        "Japan": "jp", "Jersey": "je", "Kuwait": "kw", "Latvia": "lv", "Luxembourg": "lu", "Malaysia": "my", "Mexico": "mx",
        "Netherlands": "nl", "Norway": "no", "Poland": "pl", "Singapore": "sg", "South Africa": "za", "South Korea": "kr",
        "Spain": "es", "Sri Lanka": "lk", "Sweden": "se", "Switzerland": "ch", "Taiwan": "tw", "Thailand": "th",
-       "United Arab Emirates": "ae", "United Kingdom": "gb", "United States": "us", "Vietnam": "vn"}
+       "United Arab Emirates": "ae", "United Kingdom": "gb", "United States": "us", "Vietnam": "vn",
+       "Austria": "at", "Bahrain": "bh", "Greece": "gr", "Hungary": "hu", "Isle of Man": "im", "Israel": "il", "Liechtenstein": "li",
+       "New Zealand": "nz", "Philippines": "ph", "Qatar": "qa", "Türkiye": "tr", "Turkey": "tr"}
 SUFFIX = re.compile(r"\b(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|ag|asa|ab|sa|nv|holdings?|group)\b")
 NAV = """<nav class=nav aria-label="Account">
   <button class=lang type=button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg><span>English</span></button>
