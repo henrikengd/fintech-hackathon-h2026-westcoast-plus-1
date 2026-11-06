@@ -74,7 +74,6 @@ CONTROLS = """<dialog class=logbox id=logbox>
     <h3 id=logtitle>Log decision</h3>
     <p id=logwhat></p>
     <div class=seg id=logvote role=group aria-label="New vote" hidden></div>
-    <label>Your name <input type=text id=who autocomplete=name required></label>
     <label>Reason <textarea id=why rows=4></textarea></label>
     <p class=logerror id=logerror role=alert></p>
     <div class=logbuttons><button class=btn type=button id=logcancel>Cancel</button><button class="btn primary" type=submit>Log decision</button></div>
@@ -83,12 +82,14 @@ CONTROLS = """<dialog class=logbox id=logbox>
 <script>
 (() => {
   const main = document.querySelector('main'), box = document.getElementById('logbox'), form = document.getElementById('logform');
-  const who = document.getElementById('who'), why = document.getElementById('why'), error = document.getElementById('logerror');
+  const why = document.getElementById('why'), error = document.getElementById('logerror');
   const LANE = {against: 'Against board', unclear: 'Unclear', with: 'With board'};
   const sheetName = decodeURIComponent(location.pathname.split('/').pop());
   if (!document.querySelector('details.prop')) return;  // sheets from before this design have no sign-off here
   let pending = null;
-  try { who.value = localStorage.getItem('reviewer') || ''; } catch {}
+  // The log needs a named reviewer. The page has no sign-in yet, so it uses a name saved earlier in this browser, or the role.
+  let who = 'Stewardship manager';
+  try { who = localStorage.getItem('reviewer') || who; } catch {}
 
   function ask(task) {
     pending = task; error.textContent = ''; why.value = '';
@@ -98,7 +99,7 @@ CONTROLS = """<dialog class=logbox id=logbox>
     const vote = document.getElementById('logvote');
     vote.hidden = !task.choices;  // Change vote: the new vote is one of the other two
     if (task.choices) vote.innerHTML = task.choices.map((v, i) => `<button type=button data-v="${v}" aria-pressed=${i === 0}>${v}</button>`).join('');
-    box.showModal(); (who.value ? why : who).focus();
+    box.showModal(); why.focus();
   }
   document.getElementById('logcancel').onclick = () => box.close();
   document.getElementById('logvote').onclick = e => {
@@ -107,12 +108,10 @@ CONTROLS = """<dialog class=logbox id=logbox>
   };
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    if (!who.value.trim()) { error.textContent = 'Enter your name.'; return who.focus(); }
     if (pending.needsReason && !why.value.trim()) { error.textContent = 'A changed vote needs a reason.'; return why.focus(); }
-    try { localStorage.setItem('reviewer', who.value.trim()); } catch {}
     if (pending.choices) pending.decision = document.querySelector('#logvote [aria-pressed=true]').dataset.v;
     const r = await fetch('/log', {method: 'POST', body: JSON.stringify({company: main.dataset.company, meeting_date: main.dataset.date, item: pending.item,
-      decision: pending.decision, reviewer: who.value.trim(), sheet: sheetName, reason: why.value.trim(), ...pending.extra})});
+      decision: pending.decision, reviewer: who, sheet: sheetName, reason: why.value.trim(), ...pending.extra})});
     if (!r.ok) { error.textContent = (await r.json()).error; return; }
     pending.done(); box.close();
   });
